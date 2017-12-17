@@ -29,8 +29,8 @@ class Lexer:
         'LE',
         'GE',
 
-        'LEFTBRACKET',
-        'RIGHTBRACKET',
+        'LBRACKET',
+        'RBRACKET',
         'COMMENT'
     )
 
@@ -68,8 +68,8 @@ class Lexer:
     t_LE = r'<='
     t_GE = r'>='
 
-    t_LEFTBRACKET = r'\['
-    t_RIGHTBRACKET = r'\]'
+    t_LBRACKET = r'\['
+    t_RBRACKET = r'\]'
 
     t_ignore_COMMENT = r'\(.*\)'
     t_ignore = ' \r\t'
