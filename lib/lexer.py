@@ -13,7 +13,7 @@ class Lexer:
         'WRITE',
 
         'PIDENTIFIER',
-        'ASSIGNMENT',
+        'ASSIGN',
         'SEMICOLON',
 
         'NUMBER',
@@ -30,8 +30,7 @@ class Lexer:
         'GE',
 
         'LBRACKET',
-        'RBRACKET',
-        'COMMENT'
+        'RBRACKET'
     )
 
     t_VAR = r'VAR'
@@ -53,7 +52,7 @@ class Lexer:
     t_WRITE = r'WRITE'
 
     t_PIDENTIFIER = r'[_a-z]+'
-    t_ASSIGNMENT = r':='
+    t_ASSIGN = r':='
     t_SEMICOLON = r';'
 
     t_PLUS = r'\+'
@@ -74,6 +73,18 @@ class Lexer:
     t_ignore_COMMENT = r'\(.*\)'
     t_ignore = ' \r\t'
 
+    def __init__(self):
+        self.lexer = lex.lex(module=self)
+
+    def tokenize(self, source_code):
+        self.lexer.input(source_code)
+        while True:
+            t = self.lexer.token()
+            if t:
+                yield t
+            else:
+                break
+
     def t_NUMBER(self, t):
         r'\d+'
         t.value = int(t.value)
@@ -85,15 +96,3 @@ class Lexer:
 
     def t_error(self, t):
         print("Illegal character '%s'" % t.value[0])
-
-    def tokenize(self, source_code):
-        self.lexer.input(source_code)
-        while True:
-            t = self.lexer.token()
-            if t:
-                yield t
-            else:
-                break
-
-    def __init__(self, **kwargs):
-        self.lexer = lex.lex(module=self, **kwargs)

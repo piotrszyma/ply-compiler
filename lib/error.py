@@ -1,6 +1,2 @@
-class LexerError(Exception):
-    pass
-
-
-class ParserError(Exception):
+class CompilerError(Exception):
     pass

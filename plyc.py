@@ -1,7 +1,10 @@
 #!/usr/bin/env python
 import argparse
 
+from lib.error import CompilerError
 from lib.lexer import Lexer
+from lib.parser import Parser
+from lib.static_analysis import StaticAnalyzer
 
 
 def parse_args():
@@ -13,18 +16,21 @@ def parse_args():
 
 def run_compiler(input_name, output_name):
     lexer = Lexer()
+    parser = Parser()
+    analyzer = StaticAnalyzer()
 
     with open(input_name, 'r') as f:
         source_code = f.read()
 
-    tokens = lexer.tokenize(source_code)
-    for t in list(tokens):
-        print(t)
-    # generate tokens using lexer
-    # group tokens into syntactical units using parser
-    # perform semantic analyze
-    # optimize
-    # generate source code
+    try:
+        # group tokens into syntactical units using parser
+        parse_tree = parser.parse(source_code)
+        # perform semantic analyze
+        ast = analyzer.analyze(parse_tree)
+        # optimize
+        # generate source code
+    except CompilerError:
+        exit(1)
 
 
 def main():
@@ -32,4 +38,5 @@ def main():
     run_compiler(args.input, args.output)
 
 
-main()
+if __name__ == '__main__':
+    main()

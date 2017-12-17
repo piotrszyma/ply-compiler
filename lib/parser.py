@@ -1,12 +1,24 @@
 import ply.yacc as yacc
 
-from lib.error import ParserError
+from lib.error import CompilerError
 from lib.lexer import Lexer
 
 import logging
 
 
 class Parser:
+    def __init__(self):
+        self.lexer = Lexer()
+        self.tokens = self.lexer.tokens
+        # TODO: debug=False & write_tables=False when ready
+        self.parser = yacc.yacc(module=self,
+                                debug=True)
+
+    def parse(self, source_code):
+        return self.parser.parse(source_code,
+                                 lexer=self.lexer.lexer,
+                                 debug=False)
+
     # program
 
     def p_program(self, p):
@@ -18,7 +30,7 @@ class Parser:
     def p_vdeclarations_number(self, p):
         'vdeclarations : vdeclarations PIDENTIFIER'
         p[0] = p[1] if p[1] else []
-        p.append(('int', p[2], p.lineno(2)))
+        p[0].append(('int', p[2], p.lineno(2)))
 
     def p_vdeclarations_table(self, p):
         'vdeclarations : vdeclarations PIDENTIFIER LBRACKET NUMBER RBRACKET'
@@ -32,9 +44,13 @@ class Parser:
     # commands
 
     def p_commands(self, p):
-        'commands : commands command'
-        p[0] = p[1] if p[1] else []
-        p[0].append(p[2])
+        '''commands : commands command
+                    | command'''
+        if len(p) == 2:
+            p[0] = [p[1]]
+        else:
+            p[0] = p[1]
+            p[0].append(p[2])
 
     # command
 
@@ -65,11 +81,11 @@ class Parser:
         p[0] = ('for_down', val, p[4], p[6], p[8])
 
     def p_command_read(self, p):
-        'command : READ identifier'
+        'command : READ identifier SEMICOLON'
         p[0] = ('read', p[2])
 
     def p_command_write(self, p):
-        'command : WRITE value'
+        'command : WRITE value SEMICOLON'
         p[0] = ('write', p[2])
 
     # expression
@@ -102,13 +118,13 @@ class Parser:
     def p_value(self, p):
         '''value : NUMBER
                  | identifier'''
-        p[0] = [1]
+        p[0] = p[1]
 
     # identifier
 
     def p_identifier_pidentifier(self, p):
         'identifier : PIDENTIFIER'
-        p[0] = ('int', p[1], p.lineno(2))
+        p[0] = ('int', p[1], p.lineno(1))
 
     def p_identifier_table_id(self, p):
         'identifier : PIDENTIFIER LBRACKET PIDENTIFIER RBRACKET'
@@ -126,9 +142,8 @@ class Parser:
         pass
 
     # error
+
     def p_error(self, p):
         logging.error('In line %d', p.lineno)
         logging.error('Unknown input "%s"', p.value)
-        raise ParserError()
-
-
+        raise CompilerError()
