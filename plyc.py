@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 import argparse
 
+from lib.code_generator import CodeGenerator
 from lib.error import CompilerError
-from lib.lexer import Lexer
+from lib.flow_graph import FlowGraph
 from lib.parser import Parser
 from lib.static_analysis import StaticAnalyzer
 
@@ -15,9 +16,10 @@ def parse_args():
 
 
 def run_compiler(input_name, output_name):
-    lexer = Lexer()
     parser = Parser()
     analyzer = StaticAnalyzer()
+    flow_generator = FlowGraph()
+    code_generator = CodeGenerator()
 
     with open(input_name, 'r') as f:
         source_code = f.read()
@@ -26,9 +28,15 @@ def run_compiler(input_name, output_name):
         # group tokens into syntactical units using parser
         parse_tree = parser.parse(source_code)
         # perform semantic analyze
-        ast = analyzer.analyze(parse_tree)
-        # optimize
-        # generate source code
+        symtab, ast = analyzer.analyze(parse_tree)
+        # generate flow graph
+        flow_graph = flow_generator.generate(ast)
+        # generate code
+        code = code_generator.generate(flow_graph, symtab)
+
+        with open(output_name, 'w') as f:
+            f.write(str(code))
+
     except CompilerError:
         exit(1)
 
