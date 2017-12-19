@@ -1,0 +1,4 @@
+WHERE_NOW=$PWD
+echo $WHERE_NOW
+cd ./test/first_phase
+pytest .

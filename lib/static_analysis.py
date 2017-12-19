@@ -24,13 +24,17 @@ class StaticAnalyzer:
 
     def check_for_duplicate_declarations(self, declarations):
         seen = []
-        for _, val, *_, lineno in declarations:
+        for type, val, *details, lineno in declarations:
             if val in seen:
                 logging.error(' In line {}: double declaration of {}'.format(
                     lineno,
                     val))
                 raise CompilerError()
-            seen.append(val)
+            if type == 'int[]':
+                [size] = details
+                seen.extend([val + '#' + str(i) for i in range(size)])
+            else:
+                seen.append(val)
 
         self.globals = seen
 

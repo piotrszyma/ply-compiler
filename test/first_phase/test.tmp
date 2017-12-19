@@ -1,8 +1,9 @@
+
 VAR
-    a b c[20]
+    a b
 BEGIN
     a := 5;
-    b := 7;
+    b := 6;
     a := a + b;
-    WRITE a;
+    WRITE 11;
 END
