@@ -1,3 +1,4 @@
+from lib.error import CompilerError
 from lib.utils import is_int, is_number, is_operation, is_inttab, get_symbol
 
 
@@ -7,6 +8,9 @@ class Machine:
         self.mem = {}
 
     def reserve_memory(self, symtab):
+        for i in range(10):
+            self.mem[i] = str(i)
+
         for index, symbol in enumerate(symtab, 10):
             self.mem[symbol] = index
 
@@ -23,6 +27,18 @@ class Machine:
 
         self.code += code
 
+    def save_register_in_swap_mem(self, index):
+        if 0 < index < 9:
+            self.code += ['STORE {}'.format(index)]
+        else:
+            raise CompilerError("Swap mem out of range")
+
+    def load_to_register_from_swap_mem(self, index):
+        if 0 < index < 9:
+            self.code += ['LOAD {}'.format(index)]
+        else:
+            raise CompilerError("Swap mem out of range")
+
     def set_number_in_register(self, number):
         self.generate_number_in_register(number)
 
@@ -34,6 +50,10 @@ class Machine:
         symbol = get_symbol(source)
         self.code += ['ADD {}'.format(self.get_addr(symbol))]
 
+    def sub_memory_from_register(self, source):
+        symbol = get_symbol(source)
+        self.code += ['SUB {}'.format(self.get_addr(symbol))]
+
     def save_register_to_memory(self, target):
         symbol = get_symbol(target)
         self.code += ['STORE {}'.format(self.get_addr(symbol))]
@@ -43,6 +63,7 @@ class Machine:
 
     def assign(self, target, expression):
         _, *value = expression
+        import pdb; pdb.set_trace()
         if is_operation(value):
             self.assign_operation(target, value)
         else:
@@ -51,34 +72,40 @@ class Machine:
             elif is_number(value[0]):
                 self.assign_number(target, value[0])
             else:
-                raise Exception
-                # is array element
+                raise CompilerError("Unknown value type")
 
     def assign_variable(self, target, source):
-        pass
+        self.set_memory_in_register(source)
+        self.save_register_to_memory(target)
 
     def assign_number(self, target, source):
         self.generate_number_in_register(source)
         self.save_register_to_memory(target)
 
     def assign_operation(self, target, equation):
+        sign, *operands = equation
+
         operations = {
             '+': lambda x, y: self.operation_add(x, y),
+            '-': lambda x, y: self.operation_substract(x, y),
+            '/': lambda x, y: self.operation_divide(x, y),
+            '*': lambda x, y: self.operation_multiply(x, y),
+            '%': lambda x, y: self.operation_modulo(x, y)
         }
-        operations[equation[0]](target, equation[1:])
+
+        operations[sign](target, operands)
 
     def operation_add(self, target, operands):
         x, y = operands
-        # TODO: minimalize
         if is_number(x):
             # t := 1 + 1
             if is_number(y):
-                self.assign_number(target, x + y)
+                self.generate_number_in_register(x + y)
             # t := 1 + a
+            # t  := 1 + a[x]
             elif is_int(y) or is_inttab(y):
                 self.set_number_in_register(x)
                 self.add_memory_to_register(y)
-            # t:= 1 + a[x]
         elif is_int(x) or is_inttab(x):
             # t := a + 1
             if is_number(y):
@@ -86,22 +113,50 @@ class Machine:
                 self.set_number_in_register(x)
                 self.add_memory_to_register(y)
             # t := a + b
+            # t := a + b[x]
             elif is_int(y) or is_inttab(y):
                 self.set_memory_in_register(x)
                 self.add_memory_to_register(y)
-            # t:= a + b[x]
             else:
-                raise Exception
+                raise CompilerError("Unexpected symbol")
 
         self.save_register_to_memory(target)
 
-    def operation_substract(self, left, right):
+    def operation_substract(self, target, operands):
+        x, y = operands
+        if is_number(x):
+            # t := 1 - 1
+            if is_number(y):
+                self.generate_number_in_register(x - y)
+            # t := 1 - a
+            # t := 1 - a[x]
+            elif is_int(y) or is_inttab(y):
+                self.set_number_in_register(x)
+                self.sub_memory_from_register(y)
+        elif is_int(x) or is_inttab(x):
+            # t := a - 1
+            if is_number(y):
+                self.set_number_in_register(y)
+                self.save_register_to_memory(0)
+                self.set_memory_in_register(x)
+                self.sub_memory_from_register(0)
+            # t := a - b
+            # t := a - b[x]
+            elif is_int(y) or is_inttab(y):
+                self.set_memory_in_register(x)
+                self.sub_memory_from_register(y)
+            else:
+                raise CompilerError("Unexpected symbol")
+
+        self.save_register_to_memory(target)
+
+    def operation_divide(self, target, operands):
         pass
 
-    def operation_multiply(self, left, right):
+    def operation_multiply(self, target, operands):
         pass
 
-    def operation_modulo(self, left, right):
+    def operation_modulo(self, target, operands):
         pass
 
     def write(self, value):
@@ -110,8 +165,9 @@ class Machine:
         else:
             self.write_number(value)
 
-    def write_variable(self, variable):
-        code = ['LOAD {}'.format(self.mem[variable[1]])]
+    def write_variable(self, source):
+        symbol = get_symbol(source)
+        code = ['LOAD {}'.format(self.get_addr(symbol))]
         code += ['PUT']
         self.code += code
 

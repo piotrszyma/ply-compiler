@@ -19,8 +19,15 @@ def is_inttab(a):
            and a[0] == 'int[]'
 
 
+def is_swap(a):
+    return isinstance(a, int) \
+           and 0 <= a <= 9
+
+
 def get_symbol(a):
     if is_int(a):
         return a[1]
     elif is_inttab(a):
         return str(a[1]) + '#' + str(a[2])
+    elif is_swap(a):
+        return a
