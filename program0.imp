@@ -2,7 +2,7 @@ VAR
     a b
 BEGIN
     a := 1;
-    b := a;
-    b := b + a;
-    WRITE b;
+    IF a <> 0 THEN
+        a := 0;
+    ENDIF
 END
