@@ -1,7 +1,13 @@
 
 VAR
-    a
+    a b
 BEGIN
-    a := 1 + 2;
-    WRITE a;
+    a := 2;
+    b := 1;
+    IF a <> b THEN
+        WRITE b;
+        IF a <> b THEN
+            WRITE b;
+        ENDIF
+    ENDIF
 END

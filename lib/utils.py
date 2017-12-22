@@ -24,6 +24,12 @@ def is_swap(a):
            and 0 <= a <= 9
 
 
+def is_label(a):
+    return isinstance(a, tuple) \
+           and len(a) == 2 \
+           and a[0] == 'label'
+
+
 def get_symbol(a):
     if is_int(a):
         return a[1]

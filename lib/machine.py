@@ -1,11 +1,40 @@
 from lib.error import CompilerError
-from lib.utils import is_int, is_number, is_operation, is_inttab, get_symbol
+from lib.utils import is_int, is_number, is_operation, is_inttab, get_symbol, is_label
 
 
 class Machine:
     def __init__(self):
         self.code = []
         self.mem = {}
+        self.labels = []
+
+    def set_labels(self, flow):
+        for c in flow:
+            if is_label(c) and c[1] not in self.labels:
+                self.labels.append(c[1])
+
+        sorted(self.labels)
+
+    def get_new_label(self):
+        current = int(sorted(self.labels)[-1][5:])
+        self.labels.append('label{}'.format(current + 1))
+        return self.labels[-1]
+
+    def resolve_labels(self):
+        resolved = []
+        labels = {}
+
+        for i, c in enumerate(self.code):
+            if isinstance(c, tuple) and c[0] == 'label':
+                # resolved[-1] = ('label', c[1], resolved),
+                labels[c[1]] = len(resolved)
+            else:
+                resolved.append(c)
+
+        for i, c in enumerate(resolved):
+            if isinstance(c, tuple):
+                resolved[i] = '{} {}'.format(c[0], labels[c[1]])
+        self.code = resolved
 
     def reserve_memory(self, symtab):
         for i in range(10):
@@ -63,7 +92,6 @@ class Machine:
 
     def assign(self, target, expression):
         _, *value = expression
-        import pdb; pdb.set_trace()
         if is_operation(value):
             self.assign_operation(target, value)
         else:
@@ -178,3 +206,68 @@ class Machine:
 
     def end(self):
         self.code += ['HALT']
+
+    def check_if(self, cmd):
+        _, cond, _, label = cmd
+        comps = {
+            '=': self.comp_eq
+        }
+        comps[cond[1]](cond, label)
+
+    def comp_eq(self, cond, label):
+        left_operand, _, right_operand = cond
+
+        if not (is_int(left_operand) and is_int(right_operand)):
+            raise CompilerError("Not implemented yet")
+        code = """
+        LOAD a
+        SUB b
+        JZERO #LABEL1
+        JUMP #FALSE
+        #LABEL1:
+        LOAD b
+        SUB a
+        JZERO @label
+        #FALSE:
+        """
+        self.parse_code_to_cmds(code,
+                                a=left_operand,
+                                b=right_operand,
+                                label=label)
+
+    def parse_code_to_cmds(self, code, **variables):
+        # TODO: now I assume there are only variables, no numbers
+        labels = {}
+        cmds = []
+        for c in [c.strip() for c in code.split("\n") if c.strip() != '']:
+            left, right = (c.split(" ") + [None])[:2]
+            if not right and left[1:-1] not in labels.keys():
+                # for new labels, generate unique labels names
+                label_name = self.get_new_label()
+                labels[left[1:-1]] = label_name
+                # parse found label to ('label', tuple)
+                cmds.append(('label', label_name), )
+            elif not right:
+                # if new label, but already parsed
+                cmds.append(('label', labels[left[1:-1]]), )
+            elif right in variables.keys():
+                # replace name with address
+                resolved = variables[right][1]
+                cmds.append('{cmd} {param}'.format(
+                    cmd=left,
+                    param=self.mem[resolved]),
+                )
+            elif right[0] == '#':
+                # new label, but as JUMP (kind of)
+                label_name = self.get_new_label()
+                labels[right[1:]] = label_name
+                cmds.append((left, label_name), )
+            elif right[0] == '@':
+                # old label, replace with real name provided as kwarg
+                cmds.append((left, variables[right[1:]]), )
+            else:
+                cmds.append('{cmd} {param}'.format(
+                    cmd=left,
+                    param=right),
+                )
+        self.code.extend(cmds)
