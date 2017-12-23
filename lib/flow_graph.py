@@ -43,6 +43,33 @@ class FlowGraph:
         self.generate(if_false)
         self.flow += self.add_label(label_end)
 
+    def flow_while(self, cmd):
+        _, cond, body = cmd
+        label_start, label_end = self.next_label(), self.next_label()
+        self.flow += self.add_label(label_start)
+        self.flow += self.add_goto_if(self.neg(cond), label_end)
+        self.generate(body)
+        self.flow += self.add_goto(label_start)
+        self.flow += self.add_label(label_end)
+
+    def flow_for_up(self, cmd):
+        _, iterator, start, end, body = cmd
+        label_start, label_end = self.next_label(), self.next_label()
+        iterator = list(iterator)
+        iterator[1] = '#{}'.format(iterator[1])
+        iterator = tuple(iterator)
+        self.flow += ('assign', iterator, ('expression', start)),
+        self.flow += self.add_label(label_start)
+        self.generate(body)
+        # TODO: add line
+        self.add_goto_if(('condition', '==', iterator, end), label_end)
+        self.flow += ('assign', iterator, ('expression', '+', iterator, 1))
+        self.add_goto(label_start)
+        self.add_label(label_end)
+
+    def flow_for_down(self, cmd):
+        pass
+
     def neg(self, cond):
         op, lside, rside = cond[1:]
         neg_map = {
@@ -55,6 +82,7 @@ class FlowGraph:
         }
         return neg_map[op](lside, rside)
 
+    # TODO: Useless?
     def norm(self, cond):
         lside, op, rside = cond
         norm_map = {

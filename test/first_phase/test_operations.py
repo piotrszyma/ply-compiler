@@ -4,42 +4,42 @@ from test.compiler_test_case import CompilerTestCase
 class TestOperations(CompilerTestCase):
     def test_addition_should_work(self):
         self.assertEqual(
-            self.compile_and_run(MIX_ADDITION),
+            self.compileAndRun(MIX_ADDITION),
             '10'
         )
 
         self.assertEqual(
-            self.compile_and_run(NUMBER_VAR_ADDITION),
+            self.compileAndRun(NUMBER_VAR_ADDITION),
             '6'
         )
 
         self.assertEqual(
-            self.compile_and_run(VAR_NUMBER_ADDITION),
+            self.compileAndRun(VAR_NUMBER_ADDITION),
             '6'
         )
 
         self.assertEqual(
-            self.compile_and_run(TWO_VARS_ADDITION),
+            self.compileAndRun(TWO_VARS_ADDITION),
             '11'
         )
 
         self.assertEqual(
-            self.compile_and_run(TWO_TAB_ELS_ADDITION),
+            self.compileAndRun(TWO_TAB_ELS_ADDITION),
             '4'
         )
 
     def test_substraction_should_work(self):
         self.assertEqual(
-            self.compile_and_run(NUM_SUBST),
+            self.compileAndRun(NUM_SUBST),
             '3'
         )
         self.assertEqual(
-            self.compile_and_run(VAR_SUBST),
+            self.compileAndRun(VAR_SUBST),
             '11'
         )
 
         self.assertEqual(
-            self.compile_and_run(MIX_SUBSTRACTION),
+            self.compileAndRun(MIX_SUBSTRACTION),
             '1'
         )
 

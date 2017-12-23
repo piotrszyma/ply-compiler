@@ -19,6 +19,10 @@ def is_inttab(a):
            and a[0] == 'int[]'
 
 
+def is_variable(a):
+    return is_int(a) or is_inttab(a)
+
+
 def is_swap(a):
     return isinstance(a, int) \
            and 0 <= a <= 9

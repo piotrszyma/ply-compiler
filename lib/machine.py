@@ -3,6 +3,12 @@ from lib.utils import is_int, is_number, is_operation, is_inttab, get_symbol, is
 
 
 class Machine:
+    slots = {
+        'code',
+        'mem',
+        'labels'
+    }
+
     def __init__(self):
         self.code = []
         self.mem = {}
@@ -216,9 +222,10 @@ class Machine:
 
     def comp_eq(self, cond, label):
         left_operand, _, right_operand = cond
-
+        # TODO: implement for numbers
         if not (is_int(left_operand) and is_int(right_operand)):
             raise CompilerError("Not implemented yet")
+
         code = """
         LOAD a
         SUB b
@@ -230,12 +237,17 @@ class Machine:
         JZERO @label
         #FALSE:
         """
-        self.parse_code_to_cmds(code,
-                                a=left_operand,
-                                b=right_operand,
-                                label=label)
+        self.code_to_cmds(code,
+                          a=left_operand,
+                          b=right_operand,
+                          label=label)
 
-    def parse_code_to_cmds(self, code, **variables):
+    def code_to_cmds(self, code, **variables):
+        """
+        JZERO #LABEL1   <-    # make new label
+        JZERO @label    <-    @ use existing label
+        #LABEL:         <-    label placement (one only)
+        """
         # TODO: now I assume there are only variables, no numbers
         labels = {}
         cmds = []

@@ -4,39 +4,39 @@ from test.compiler_test_case import CompilerTestCase
 class TestIfStatement(CompilerTestCase):
     def test_ifs_should_work(self):
         self.assertEqual(
-            self.compile_and_run(IF_WITH_WRITE_IN_IF_WITH_WRITE),
+            self.compileAndRun(IF_WITH_WRITE_IN_IF_WITH_WRITE),
             '1\n1'
         )
 
         self.assertEqual(
-            self.compile_and_run(IF_WITH_WRITE_IN_IF),
+            self.compileAndRun(IF_WITH_WRITE_IN_IF),
             '1'
         )
 
         self.assertEqual(
-            self.compile_and_run(IF_WITH_IF_WITH_ASSIGN),
+            self.compileAndRun(IF_WITH_IF_WITH_ASSIGN),
             '7'
         )
 
     def test_nested_if_with_assign(self):
         self.assertEqual(
-            self.compile_and_run(IF_WITH_IF_WITH_IF_WITH_ASSIGN),
+            self.compileAndRun(IF_WITH_IF_WITH_IF_WITH_ASSIGN),
             '7'
         )
 
     def test_if_else_should_work(self):
         self.assertEqual(
-            self.compile_and_run(IF_ELSE_WITH_WRITES),
+            self.compileAndRun(IF_ELSE_WITH_WRITES),
             '31'
         )
 
         self.assertEqual(
-            self.compile_and_run(IF_ELSE_WITH_IF_ELSE_WRITES),
+            self.compileAndRun(IF_ELSE_WITH_IF_ELSE_WRITES),
             '31'
         )
 
         self.assertEqual(
-            self.compile_and_run(IF_ELSE_WITH_WRITES),
+            self.compileAndRun(IF_ELSE_WITH_WRITES),
             '31'
         )
 
@@ -65,7 +65,13 @@ BEGIN
         b := 3;
         IF a <> b THEN
             b := 4;
-            WRITE a;
+            IF a <> b THEN
+                b := 4;
+                WRITE a;
+            ELSE
+                b := 3;
+                WRITE b;
+            ENDIF
         ELSE
             b := 3;
             WRITE b;

@@ -1,12 +1,11 @@
 
 VAR
-    a b[10]
+    a b
 BEGIN
-    a := 3 - 2; (a=3)
-    a := a - 100;
-    b[0] := 200;
-    b[1] := 199;
-    b[2] := b[0] - b[1]; (b[2] = 1)
-    b[2] := b[2] + a; (b[2] = 1)
-    WRITE b[2];
+    a := 3;
+    b := 0;
+    WHILE a <> b DO
+        WRITE b;
+        b := b + 1;
+    ENDWHILE
 END

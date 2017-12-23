@@ -1,15 +1,18 @@
 import logging
 
 from lib.error import CompilerError
+from lib.utils import is_variable
 
 
 class StaticAnalyzer:
     __slots__ = {
-        'globals'
+        'globals',
+        'locals'
     }
 
     def __init__(self):
         self.globals = []
+        self.locals = []
 
     def analyze(self, parse_tree):
         _, declarations, commands = parse_tree
@@ -38,6 +41,23 @@ class StaticAnalyzer:
 
         self.globals = seen
 
-    def check_commands(self, commands):
+    def check_commands(self, cmd):
+        for c in cmd:
+            getattr(self, 'check_{type}'.format(type=c[0]))(c)
         # TODO: commands check
         pass
+
+    def check_assign(self, cmd):
+        for op in cmd[1:]:
+            if is_variable(op):
+                if op not in self.globals:
+                    import pdb; pdb.set_trace()
+
+        import pdb; pdb.set_trace()
+
+    def check_expression(self, cmd):
+        import pdb; pdb.set_trace()
+
+    def check_for_up(self, cmd):
+        import pdb; pdb.set_trace()
+

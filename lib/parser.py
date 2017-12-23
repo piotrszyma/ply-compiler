@@ -144,6 +144,8 @@ class Parser:
     # error
 
     def p_error(self, p):
-        logging.error('In line %d', p.lineno)
-        logging.error('Unknown input "%s"', p.value)
+        logging.error(" in line {lineno}: unknown input '{value}'".format(
+            lineno=p.lineno,
+            value=p.value
+        ))
         raise CompilerError()
