@@ -1,4 +1,4 @@
 WHERE_NOW=$PWD
 echo $WHERE_NOW
-cd ./test/first_phase
+cd ./test/functionality
 pytest .

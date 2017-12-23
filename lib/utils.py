@@ -18,6 +18,11 @@ def is_operation(a):
            len(a) == 3
 
 
+def is_expression(a):
+    return a[0] == 'expression' and \
+           (len(a) == 2 or len(a) == 4)
+
+
 def is_inttab(a):
     return isinstance(a, tuple) \
            and len(a) == 3 \
@@ -48,9 +53,10 @@ def get_symbol(a):
         return a
 
 
-def raise_error(msg, lineno):
-    logging.error(" in line {lineno}: {msg}".format(
-        lineno=lineno,
-        msg=msg
-    ))
+def raise_error(msg, lineno=None):
+    error_msg = ""
+    if lineno:
+        error_msg += " in line {0}: ".format(lineno)
+    error_msg += msg
+    logging.error(msg)
     raise CompilerError()

@@ -1,7 +1,7 @@
 import logging
 
 from lib.error import CompilerError
-from lib.utils import is_variable, raise_error
+from lib.utils import is_variable, raise_error, is_int, is_inttab, is_operation, is_expression, is_number
 
 
 class StaticAnalyzer:
@@ -56,11 +56,11 @@ class StaticAnalyzer:
             # TODO: commands check
 
     def check_assign(self, cmd):
-        for op in cmd[1:]:
-            if is_variable(op):
-                if op[1] not in self.scope:
-                    import pdb;
-                    pdb.set_trace()
+        # a = x + y
+        # a = x
+        _, left, right = cmd
+        self.check_scope(left)
+        self.check_scope(right)
 
     def check_expression(self, cmd):
         if cmd[1][1] not in self.scope:
@@ -72,19 +72,20 @@ class StaticAnalyzer:
     def check_write(self, cmd):
         _, operand = cmd
         if is_variable(operand):
-            name = operand[1]
-            lineno = operand[-1]
-            if name not in self.scope:
-                raise_error(
-                    msg="undeclared variable {0} ".format(name),
-                    lineno=lineno
-                )
+            self.check_scope(operand)
 
     def check_if_then(self, cmd):
         pass
 
+    def check_if_else(self, cmd):
+        pass
+
+    def check_while(self, cmd):
+        pass
+
     def check_for_up(self, cmd):
         _, iterator, start, end, cmds = cmd
+        # TODO: check if iterator is not array, number
         if iterator in self.symbols:
             raise_error(
                 msg="trying to set previously declared variable '{0}' as iterator".format(iterator[1]),
@@ -95,4 +96,38 @@ class StaticAnalyzer:
         self.analyze(cmds)
         self.remove_from_scope(iterator[1])
         # with # means -> counter for this loop
+        self.add_to_symbols(iterator[1])
         self.add_to_symbols('#' + iterator[1])
+
+    def check_scope(self, operand):
+        if is_number(operand):
+            pass
+        elif is_int(operand):
+            if operand[1] not in self.scope:
+                raise_error(
+                    msg="Undeclared variable {}".format(operand[1]),
+                    lineno=operand[2]
+                )
+        elif is_inttab(operand):
+            name = '{arr_name}#{index}'.format(
+                arr_name=operand[1],
+                index=operand[2]
+            )
+            if name not in self.scope:
+                raise_error(
+                    msg="Undeclared variable {}".format(operand[1])
+                )
+        elif is_operation(operand):
+            import pdb;
+            pdb.set_trace()
+        elif is_expression(operand):
+            if len(operand) == 4:
+                self.check_scope(operand[2])
+                self.check_scope(operand[3])
+            elif len(operand) == 2:
+                self.check_scope(operand[1])
+            else:
+                raise CompilerError("Unexpected operand")
+
+        else:
+            raise CompilerError("Unexpected operand")
