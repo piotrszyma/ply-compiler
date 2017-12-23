@@ -14,7 +14,7 @@ class CodeGenerator:
         self.machine = Machine()
 
     def generate(self, flow_graph, symtab):
-
+        import pdb; pdb.set_trace()
         self.machine.reserve_memory(symtab)
         self.machine.set_labels(flow_graph)
 

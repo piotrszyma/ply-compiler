@@ -7,12 +7,21 @@ from lib.utils import is_variable
 class StaticAnalyzer:
     __slots__ = {
         'globals',
-        'locals'
+        'locals',
+        'all_locals'
     }
 
     def __init__(self):
         self.globals = []
         self.locals = []
+        self.all_locals = set()
+
+    def add_local(self, local):
+        self.all_locals.add(local)
+        self.locals.append(local)
+
+    def remove_local(self, local):
+        self.locals.remove(local)
 
     def analyze(self, parse_tree):
         _, declarations, commands = parse_tree
@@ -23,7 +32,7 @@ class StaticAnalyzer:
         # TODO: check other commands, add locals
 
         # returns list of variables & commands
-        return self.globals, commands
+        return (self.globals + list(self.all_locals)), commands
 
     def check_for_duplicate_declarations(self, declarations):
         seen = []
@@ -45,7 +54,6 @@ class StaticAnalyzer:
         for c in cmd:
             getattr(self, 'check_{type}'.format(type=c[0]))(c)
         # TODO: commands check
-        pass
 
     def check_assign(self, cmd):
         for op in cmd[1:]:
@@ -59,5 +67,14 @@ class StaticAnalyzer:
         import pdb; pdb.set_trace()
 
     def check_for_up(self, cmd):
-        import pdb; pdb.set_trace()
+        _, iterator, start, end, cmds = cmd
+        if iterator in self.globals:
+            logging.error(" in line {lineno}: trying to set previously declared variable '{value}' as iterator".format(
+                lineno=iterator[2],
+                value=iterator[1]
+            ))
+            raise CompilerError()
 
+        iterator = (iterator[0], '#' + iterator[1], iterator[2])
+        self.add_local('#' + iterator[1])
+        # TODO: locals of loop

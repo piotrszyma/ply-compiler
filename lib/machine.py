@@ -221,9 +221,9 @@ class Machine:
         comps[cond[1]](cond, label)
 
     def comp_eq(self, cond, label):
-        left_operand, _, right_operand = cond
+        left, _, right = cond
         # TODO: implement for numbers
-        if not (is_int(left_operand) and is_int(right_operand)):
+        if not (is_int(left) and is_int(right)):
             raise CompilerError("Not implemented yet")
 
         code = """
@@ -238,8 +238,8 @@ class Machine:
         #FALSE:
         """
         self.code_to_cmds(code,
-                          a=left_operand,
-                          b=right_operand,
+                          a=left,
+                          b=right,
                           label=label)
 
     def code_to_cmds(self, code, **variables):
