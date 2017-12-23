@@ -10,9 +10,9 @@ class Machine:
     }
 
     def __init__(self):
+        self.labels = []
         self.code = []
         self.mem = {}
-        self.labels = []
 
     def set_labels(self, flow):
         for c in flow:
@@ -31,7 +31,6 @@ class Machine:
 
         for i, c in enumerate(self.code):
             if isinstance(c, tuple) and c[0] == 'label':
-                # resolved[-1] = ('label', c[1], resolved),
                 labels[c[1]] = len(resolved)
             else:
                 resolved.append(c)
@@ -119,11 +118,11 @@ class Machine:
         sign, *operands = equation
 
         operations = {
-            '+': lambda x, y: self.operation_add(x, y),
-            '-': lambda x, y: self.operation_substract(x, y),
-            '/': lambda x, y: self.operation_divide(x, y),
-            '*': lambda x, y: self.operation_multiply(x, y),
-            '%': lambda x, y: self.operation_modulo(x, y)
+            '+': self.operation_add,
+            '-': self.operation_substract,
+            '/': self.operation_divide,
+            '*': self.operation_multiply,
+            '%': self.operation_modulo
         }
 
         operations[sign](target, operands)
@@ -206,11 +205,16 @@ class Machine:
 
     def write_number(self, value):
         self.generate_number_in_register(value)
-        code = ['PUT']
-        self.code += code
+        self.parse('PUT')
+
+    def read(self, value):
+        self.read_variable(value)
+
+    def read_variable(self, value):
+        self.parse('READ a', a=value)
 
     def end(self):
-        self.code += ['HALT']
+        self.parse('HALT')
 
     def check_if(self, cmd):
         _, cond, _, label = cmd
@@ -239,10 +243,7 @@ class Machine:
                 JZERO @label
                 #FALSE:
                 """
-                self.code_to_cmds(code,
-                                  a=left,
-                                  b=right,
-                                  label=label)
+                self.parse(code, a=left, b=right, label=label)
             elif is_number(right):
                 # a = 1
                 if right == 0:
@@ -250,9 +251,7 @@ class Machine:
                     LOAD a
                     JZERO @label
                     """
-                    self.code_to_cmds(code,
-                                      a=left,
-                                      label=label)
+                    self.parse(code, a=left, label=label)
             else:
                 raise CompilerError()
         else:
@@ -261,7 +260,7 @@ class Machine:
             raise CompilerError("Not implemented")
             # TODO: implement for numbers
 
-    def code_to_cmds(self, code, **variables):
+    def parse(self, code, **variables):
         """
         JZERO #LABEL1   <-    # make new label
         JZERO @label    <-    @ use existing label
@@ -272,15 +271,17 @@ class Machine:
         cmds = []
         for c in [c.strip() for c in code.split("\n") if c.strip() != '']:
             left, right = (c.split(" ") + [None])[:2]
-            if not right and left[1:-1] not in labels.keys():
+            if not right and left[1:-1] not in labels.keys() and left[0] == '#':
                 # for new labels, generate unique labels names
                 label_name = self.get_new_label()
                 labels[left[1:-1]] = label_name
                 # parse found label to ('label', tuple)
                 cmds.append(('label', label_name), )
-            elif not right:
+            elif not right and left[0] == '#':
                 # if new label, but already parsed
                 cmds.append(('label', labels[left[1:-1]]), )
+            elif not right:
+                cmds.append(left)
             elif right in variables.keys():
                 # replace name with address
                 resolved = variables[right][1]

@@ -14,9 +14,7 @@ class FlowGraph:
     def generate(self, ast, main=False):
         for c in ast:
             getattr(self, 'flow_' + c[0])(c)
-
-        if main:
-            return self.flow
+        return self.flow
 
     def next_label(self, multiple=1):
         # TODO: refactor to generator of (1, 2, 3, ...)
@@ -29,6 +27,9 @@ class FlowGraph:
         self.flow.append(cmd)
 
     def flow_write(self, cmd):
+        self.flow.append(cmd)
+
+    def flow_read(self, cmd):
         self.flow.append(cmd)
 
     def flow_if_then(self, cmd):
@@ -61,9 +62,9 @@ class FlowGraph:
         _, iterator, start, end, body = cmd
         counter = (iterator[0], '#' + iterator[1], iterator[2])
         # now we consider only variable-start & - end, later consider numbers and finish TODO
-        # TODO: perform optimalization
-
         label_start, label_end = self.next_label(2)
+
+        self.flow += self.add_goto_if((start, '>', end), label_end)
 
         self.flow += ('assign', counter, ('expression', '-', end, start)),
         self.flow += ('assign', counter, ('expression', '+', counter, 1)),
@@ -80,7 +81,26 @@ class FlowGraph:
         self.flow += self.add_label(label_end)
 
     def flow_for_down(self, cmd):
-        raise CompilerError("for_down not implemented yet")
+        _, iterator, start, end, body = cmd
+        counter = (iterator[0], '#' + iterator[1], iterator[2])
+
+        label_start, label_end = self.next_label(2)
+
+        self.flow += self.add_goto_if((start, '<', end), label_end)
+
+        self.flow += ('assign', counter, ('expression', '-', start, end)),
+        self.flow += ('assign', counter, ('expression', '+', counter, 1)),
+        self.flow += ('assign', iterator, ('expression', end)),
+
+        self.flow += self.add_label(label_start)
+        self.flow += self.add_goto_if((counter, '=', 0), label_end)
+
+        self.generate(body)
+
+        self.flow += ('assign', counter, ('expression', '-', counter, 1)),
+        self.flow += ('assign', iterator, ('expression', '-', iterator, 1)),
+        self.add_goto(label_start)
+        self.add_label(label_end)
 
     def neg(self, cond):
         op, lside, rside = cond[1:]

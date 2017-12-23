@@ -1,9 +1,7 @@
+( Błąd w linii 5: niezadeklarowana zmienna a )
 VAR
-    a b
+  b
 BEGIN
-    a := 1;
-    b := 3;
-    FOR i FROM a TO b DO
-        WRITE i;
-    ENDFOR
+  READ a;
+  b := a;
 END

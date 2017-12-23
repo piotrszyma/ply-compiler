@@ -3,6 +3,6 @@
 VAR
   a b a
 BEGIN
-  READ 1;
+  READ a;
   b := a;
 END

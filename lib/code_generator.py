@@ -10,7 +10,6 @@ class CodeGenerator:
 
     def __init__(self):
         self.memtab = {}
-        self.reg = None
         self.machine = Machine()
 
     def generate(self, flow_graph, symtab):
@@ -30,6 +29,10 @@ class CodeGenerator:
     def gen_write(self, cmd):
         _, variable = cmd
         self.machine.write(variable)
+
+    def gen_read(self, cmd):
+        _, variable = cmd
+        self.machine.read(variable)
 
     def gen_if(self, cmd):
         self.machine.check_if(cmd)

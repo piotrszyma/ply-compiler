@@ -31,17 +31,16 @@ class StaticAnalyzer:
         else:
             commands = parse_tree
         self.check_commands(commands)
-        # TODO: check other commands, add locals
-        # returns list of variables & commands
         return self.symbols, commands
 
     def check_for_duplicate_declarations(self, declarations):
         seen = []
         for kind, val, *details, lineno in declarations:
             if val in seen:
-                logging.error(' In line {}: double declaration of {}'.format(
-                    lineno,
-                    val))
+                raise_error(
+                    msg='double declaration of {}'.format(val),
+                    lineno=lineno
+                )
                 raise CompilerError()
             if kind == 'int[]':
                 [size] = details
@@ -56,8 +55,6 @@ class StaticAnalyzer:
             # TODO: commands check
 
     def check_assign(self, cmd):
-        # a = x + y
-        # a = x
         _, left, right = cmd
         self.check_scope(left)
         self.check_scope(right)
@@ -74,6 +71,11 @@ class StaticAnalyzer:
         if is_variable(operand):
             self.check_scope(operand)
 
+    def check_read(self, cmd):
+        _, operand = cmd
+        if is_variable(operand):
+            self.check_scope(operand)
+
     def check_if_then(self, cmd):
         pass
 
@@ -84,6 +86,23 @@ class StaticAnalyzer:
         pass
 
     def check_for_up(self, cmd):
+        _, iterator, start, end, cmds = cmd
+        # TODO: check if iterator is not array, number
+        if iterator in self.symbols:
+            raise_error(
+                msg="trying to set previously declared variable '{0}' as iterator".format(iterator[1]),
+                lineno=iterator[2]
+            )
+            raise CompilerError()
+        self.add_to_scope(iterator[1])
+        self.analyze(cmds)
+        self.remove_from_scope(iterator[1])
+        # with # means -> counter for this loop
+        self.add_to_symbols(iterator[1])
+        self.add_to_symbols('#' + iterator[1])
+
+    def check_for_down(self, cmd):
+        # TODO: check if iterator is not array, number
         _, iterator, start, end, cmds = cmd
         # TODO: check if iterator is not array, number
         if iterator in self.symbols:

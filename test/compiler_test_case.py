@@ -19,10 +19,11 @@ class CompilerTestCase(TestCase):
         with open('test.tmp', 'w') as f:
             f.write(source)
         r = subprocess.run([COMPILER_DIR + '/plyc.py', './test.tmp'], stdout=subprocess.PIPE)
+        import pdb; pdb.set_trace()
         self.assertNotEqual(r.returncode, 0)
 
-    def assertOutputEquals(self, source, expectet_output):
+    def assertOutputEquals(self, source, expected_output):
         self.assertEqual(
             self.compileAndRun(source),
-            expectet_output
+            expected_output
         )
