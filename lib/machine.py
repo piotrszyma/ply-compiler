@@ -1,5 +1,5 @@
 from lib.error import CompilerError
-from lib.utils import is_int, is_number, is_operation, is_inttab, get_symbol, is_label
+from lib.utils import is_int, is_number, is_operation, is_inttab, get_symbol, is_label, is_variable
 
 
 class Machine:
@@ -18,7 +18,6 @@ class Machine:
         for c in flow:
             if is_label(c) and c[1] not in self.labels:
                 self.labels.append(c[1])
-
         sorted(self.labels)
 
     def get_new_label(self):
@@ -164,10 +163,10 @@ class Machine:
                 self.generate_number_in_register(x - y)
             # t := 1 - a
             # t := 1 - a[x]
-            elif is_int(y) or is_inttab(y):
+            elif is_variable(y):
                 self.set_number_in_register(x)
                 self.sub_memory_from_register(y)
-        elif is_int(x) or is_inttab(x):
+        elif is_variable(x):
             # t := a - 1
             if is_number(y):
                 self.set_number_in_register(y)
@@ -176,7 +175,7 @@ class Machine:
                 self.sub_memory_from_register(0)
             # t := a - b
             # t := a - b[x]
-            elif is_int(y) or is_inttab(y):
+            elif is_variable(y):
                 self.set_memory_in_register(x)
                 self.sub_memory_from_register(y)
             else:
@@ -222,25 +221,45 @@ class Machine:
 
     def comp_eq(self, cond, label):
         left, _, right = cond
-        # TODO: implement for numbers
-        if not (is_int(left) and is_int(right)):
-            raise CompilerError("Not implemented yet")
+        if is_variable(right):
+            left, right = right, left
 
-        code = """
-        LOAD a
-        SUB b
-        JZERO #LABEL1
-        JUMP #FALSE
-        #LABEL1:
-        LOAD b
-        SUB a
-        JZERO @label
-        #FALSE:
-        """
-        self.code_to_cmds(code,
-                          a=left,
-                          b=right,
-                          label=label)
+        if is_variable(left):
+            # now left must be an int
+            if is_variable(right):
+                # two ints
+                code = """
+                LOAD a
+                SUB b
+                JZERO #LABEL1
+                JUMP #FALSE
+                #LABEL1:
+                LOAD b
+                SUB a
+                JZERO @label
+                #FALSE:
+                """
+                self.code_to_cmds(code,
+                                  a=left,
+                                  b=right,
+                                  label=label)
+            elif is_number(right):
+                # a = 1
+                if right == 0:
+                    code = """
+                    LOAD a
+                    JZERO @label
+                    """
+                    self.code_to_cmds(code,
+                                      a=left,
+                                      label=label)
+            else:
+                raise CompilerError()
+        else:
+            import pdb;
+            pdb.set_trace()
+            raise CompilerError("Not implemented")
+            # TODO: implement for numbers
 
     def code_to_cmds(self, code, **variables):
         """

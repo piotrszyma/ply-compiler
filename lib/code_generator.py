@@ -14,10 +14,8 @@ class CodeGenerator:
         self.machine = Machine()
 
     def generate(self, flow_graph, symtab):
-        import pdb; pdb.set_trace()
         self.machine.reserve_memory(symtab)
         self.machine.set_labels(flow_graph)
-
         for cmd in flow_graph:
             getattr(self, 'gen_' + cmd[0])(cmd)
 
@@ -37,7 +35,7 @@ class CodeGenerator:
         self.machine.check_if(cmd)
 
     def gen_label(self, cmd):
-        self.machine.code.append(cmd, )
+        self.machine.code.append(cmd,)
 
     def gen_goto(self, cmd):
         self.machine.code += ('JUMP', cmd[1]),

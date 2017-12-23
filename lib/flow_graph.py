@@ -1,3 +1,6 @@
+from lib.error import CompilerError
+
+
 class FlowGraph:
     __slots__ = {
         'flow',
@@ -15,10 +18,12 @@ class FlowGraph:
         if main:
             return self.flow
 
-    def next_label(self):
+    def next_label(self, multiple=1):
         # TODO: refactor to generator of (1, 2, 3, ...)
-        self.label += 1
-        return 'label{0}'.format(self.label)
+        labels = tuple('label' + str(n) for n in range(self.label,
+                                                       self.label + multiple))
+        self.label += len(labels)
+        return labels if multiple != 1 else labels[0]
 
     def flow_assign(self, cmd):
         self.flow.append(cmd)
@@ -45,7 +50,7 @@ class FlowGraph:
 
     def flow_while(self, cmd):
         _, cond, body = cmd
-        label_start, label_end = self.next_label(), self.next_label()
+        label_start, label_end = self.next_label(2)
         self.flow += self.add_label(label_start)
         self.flow += self.add_goto_if(self.neg(cond), label_end)
         self.generate(body)
@@ -54,21 +59,28 @@ class FlowGraph:
 
     def flow_for_up(self, cmd):
         _, iterator, start, end, body = cmd
-        label_start, label_end = self.next_label(), self.next_label()
-        iterator = list(iterator)
-        iterator[1] = '#{}'.format(iterator[1])
-        iterator = tuple(iterator)
+        counter = (iterator[0], '#' + iterator[1], iterator[2])
+        # now we consider only variable-start & - end, later consider numbers and finish TODO
+        # TODO: perform optimalization
+
+        label_start, label_end = self.next_label(2)
+
+        self.flow += ('assign', counter, ('expression', '-', end, start)),
+        self.flow += ('assign', counter, ('expression', '+', counter, 1)),
         self.flow += ('assign', iterator, ('expression', start)),
+
         self.flow += self.add_label(label_start)
+        self.flow += self.add_goto_if((counter, '=', 0), label_end)
+
         self.generate(body)
-        # TODO: add line
-        self.add_goto_if(('condition', '==', iterator, end), label_end)
-        self.flow += ('assign', iterator, ('expression', '+', iterator, 1))
-        self.add_goto(label_start)
-        self.add_label(label_end)
+
+        self.flow += ('assign', counter, ('expression', '-', counter, 1)),
+        self.flow += ('assign', iterator, ('expression', '+', iterator, 1)),
+        self.flow += self.add_goto(label_start)
+        self.flow += self.add_label(label_end)
 
     def flow_for_down(self, cmd):
-        pass
+        raise CompilerError("for_down not implemented yet")
 
     def neg(self, cond):
         op, lside, rside = cond[1:]
@@ -103,3 +115,6 @@ class FlowGraph:
 
     def add_label(self, label):
         return ('label', label),
+
+    def add_expression(self, symbol, left, right):
+        return 'expression', symbol, left, right

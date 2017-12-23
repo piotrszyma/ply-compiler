@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import argparse
+import logging
 
 from lib.code_generator import CodeGenerator
 from lib.error import CompilerError
@@ -30,7 +31,6 @@ def run_compiler(input_name, output_name):
         # perform semantic analyze
         symtab, ast = analyzer.analyze(parse_tree)
         # generate flow graph
-        import pdb; pdb.set_trace()
         flow_graph = flow_generator.generate(ast, main=True)
         # generate code
         code = code_generator.generate(flow_graph, symtab)
@@ -38,7 +38,9 @@ def run_compiler(input_name, output_name):
         with open(output_name, 'w') as f:
             f.write(str(code))
 
-    except CompilerError:
+    except CompilerError as error:
+        if str(error):
+            logging.error("COMPILER_ERROR: {0}".format(str(error)))
         exit(1)
 
 

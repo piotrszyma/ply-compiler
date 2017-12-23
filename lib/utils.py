@@ -1,3 +1,8 @@
+import logging
+
+from lib.error import CompilerError
+
+
 def is_number(a):
     return isinstance(a, int)
 
@@ -41,3 +46,11 @@ def get_symbol(a):
         return str(a[1]) + '#' + str(a[2])
     elif is_swap(a):
         return a
+
+
+def raise_error(msg, lineno):
+    logging.error(" in line {lineno}: {msg}".format(
+        lineno=lineno,
+        msg=msg
+    ))
+    raise CompilerError()
