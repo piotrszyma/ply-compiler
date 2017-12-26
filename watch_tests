@@ -1,0 +1,1 @@
+find . | ag 'py|imp' | entr ./run_tests

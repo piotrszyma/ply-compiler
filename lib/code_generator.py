@@ -15,8 +15,12 @@ class CodeGenerator:
     def generate(self, flow_graph, symtab):
         self.machine.reserve_memory(symtab)
         self.machine.set_labels(flow_graph)
+
         for cmd in flow_graph:
             getattr(self, 'gen_' + cmd[0])(cmd)
+
+        with open('to_resolve', 'w') as f:
+            f.write('\n'.join(str(s) for s in self.machine.code))
 
         self.machine.resolve_labels()
         self.machine.end()

@@ -1,6 +1,3 @@
-from lib.error import CompilerError
-
-
 class FlowGraph:
     __slots__ = {
         'flow',
@@ -11,7 +8,7 @@ class FlowGraph:
         self.flow = []
         self.label = 0
 
-    def generate(self, ast, main=False):
+    def generate(self, ast):
         for c in ast:
             getattr(self, 'flow_' + c[0])(c)
         return self.flow
@@ -61,7 +58,7 @@ class FlowGraph:
     def flow_for_up(self, cmd):
         _, iterator, start, end, body = cmd
         counter = (iterator[0], '#' + iterator[1], iterator[2])
-        # now we consider only variable-start & - end, later consider numbers and finish TODO
+        # TODO: now we consider only variable-start & - end, later consider numbers and finish
         label_start, label_end = self.next_label(2)
 
         self.flow += self.add_goto_if((start, '>', end), label_end)
@@ -83,6 +80,7 @@ class FlowGraph:
     def flow_for_down(self, cmd):
         _, iterator, start, end, body = cmd
         counter = (iterator[0], '#' + iterator[1], iterator[2])
+        # TODO: now we consider only variable-start & - end, later consider numbers and finish
 
         label_start, label_end = self.next_label(2)
 
@@ -90,7 +88,7 @@ class FlowGraph:
 
         self.flow += ('assign', counter, ('expression', '-', start, end)),
         self.flow += ('assign', counter, ('expression', '+', counter, 1)),
-        self.flow += ('assign', iterator, ('expression', end)),
+        self.flow += ('assign', iterator, ('expression', start)),
 
         self.flow += self.add_label(label_start)
         self.flow += self.add_goto_if((counter, '=', 0), label_end)
@@ -99,33 +97,8 @@ class FlowGraph:
 
         self.flow += ('assign', counter, ('expression', '-', counter, 1)),
         self.flow += ('assign', iterator, ('expression', '-', iterator, 1)),
-        self.add_goto(label_start)
-        self.add_label(label_end)
-
-    def neg(self, cond):
-        op, lside, rside = cond[1:]
-        neg_map = {
-            '=':  lambda l, r: (l, '<>', r),
-            '<>': lambda l, r: (l, '=', r),
-            '>=': lambda l, r: (l, '<', r),
-            '>':  lambda l, r: (l, '<=', r),
-            '<=': lambda l, r: (l, '>', r),
-            '<':  lambda l, r: (l, '>=', r)
-        }
-        return neg_map[op](lside, rside)
-
-    # TODO: Useless?
-    def norm(self, cond):
-        lside, op, rside = cond
-        norm_map = {
-            '=':  lambda l, r: (l, '=', r),
-            '<>': lambda l, r: (l, '<>', r),
-            '>=': lambda l, r: (l, '>=', r),
-            '>':  lambda l, r: (l, '>', r),
-            '<=': lambda l, r: (r, '>=', l),
-            '<':  lambda l, r: (r, '>', l)
-        }
-        return norm_map[op](lside, rside)
+        self.flow += self.add_goto(label_start)
+        self.flow += self.add_label(label_end)
 
     def add_goto_if(self, cond, label):
         return ('if', cond, 'goto', label),
@@ -138,3 +111,15 @@ class FlowGraph:
 
     def add_expression(self, symbol, left, right):
         return 'expression', symbol, left, right
+
+    def neg(self, cond):
+        op, lside, rside = cond[1:]
+        neg_map = {
+            '=':  lambda l, r: (l, '<>', r),
+            '<>': lambda l, r: (l, '=', r),
+            '>=': lambda l, r: (l, '<', r),
+            '>':  lambda l, r: (l, '<=', r),
+            '<=': lambda l, r: (l, '>', r),
+            '<':  lambda l, r: (l, '>=', r)
+        }
+        return neg_map[op](lside, rside)

@@ -18,10 +18,11 @@ class Machine:
         for c in flow:
             if is_label(c) and c[1] not in self.labels:
                 self.labels.append(c[1])
+
         sorted(self.labels)
 
     def get_new_label(self):
-        current = int(sorted(self.labels)[-1][5:])
+        current = int(sorted(self.labels, key=lambda l: int(l[5:]))[-1][5:]) if self.labels else 0
         self.labels.append('label{}'.format(current + 1))
         return self.labels[-1]
 
@@ -34,6 +35,12 @@ class Machine:
                 labels[c[1]] = len(resolved)
             else:
                 resolved.append(c)
+
+        with open('labels_resolve', 'w') as f:
+            f.write('\n'.join(str(k) + ' ' + str(v) for k, v  in labels.items()))
+
+        with open('half_resolve', 'w') as f:
+            f.write('\n'.join(str(s) for s in resolved))
 
         for i, c in enumerate(resolved):
             if isinstance(c, tuple):
@@ -183,16 +190,67 @@ class Machine:
         self.save_register_to_memory(target)
 
     def operation_divide(self, target, operands):
-        pass
+        import pdb; pdb.set_trace()
 
     def operation_multiply(self, target, operands):
-        pass
+        [left, right] = operands
+
+        if is_variable(left):
+            if is_variable(right):
+                r0 = ('int', 0, 0)
+                r1 = ('int', 1, 0)
+                r2 = ('int', 2, 0)
+
+                code = """
+                ZERO
+                STORE r2
+                LOAD x
+                STORE r0
+                LOAD y
+                STORE r1
+    
+                #START:
+                
+                LOAD r1
+                JZERO #END
+                JODD #IS_ODD
+                JUMP #NOT_ODD
+                
+                #IS_ODD:
+                
+                LOAD r2
+                ADD r0
+                STORE r2
+                
+                #NOT_ODD:
+                
+                LOAD r1
+                SHR
+                STORE r1
+                LOAD r0
+                SHL
+                STORE r0
+                
+                JUMP #START
+                
+                #END:
+                LOAD r2
+                STORE z
+                """
+
+                self.parse(code,
+                           r0=r0,
+                           r1=r1,
+                           r2=r2,
+                           x=left,
+                           y=right,
+                           z=target)
 
     def operation_modulo(self, target, operands):
         pass
 
     def write(self, value):
-        if isinstance(value, tuple):
+        if is_variable(value):
             self.write_variable(value)
         else:
             self.write_number(value)
@@ -207,11 +265,18 @@ class Machine:
         self.generate_number_in_register(value)
         self.parse('PUT')
 
-    def read(self, value):
-        self.read_variable(value)
+    def read(self, target):
+        if is_variable(target):
+            self.read_variable(target)
+        else:
+            pass  # TODO: what if not variable?
 
-    def read_variable(self, value):
-        self.parse('READ a', a=value)
+    def read_variable(self, target):
+        code = """
+        GET
+        STORE a
+        """
+        self.parse(code, a=target)
 
     def end(self):
         self.parse('HALT')
@@ -219,7 +284,13 @@ class Machine:
     def check_if(self, cmd):
         _, cond, _, label = cmd
         comps = {
-            '=': self.comp_eq
+            '=': self.comp_eq,
+            '<>': self.comp_neq,
+            '>': self.comp_gt,
+            '>=': self.comp_geq,
+            '<=': self.comp_leq,
+            '<': self.comp_lt
+            
         }
         comps[cond[1]](cond, label)
 
@@ -255,10 +326,64 @@ class Machine:
             else:
                 raise CompilerError()
         else:
-            import pdb;
-            pdb.set_trace()
             raise CompilerError("Not implemented")
             # TODO: implement for numbers
+
+    def comp_neq(self, cond, label):
+        left, _, right = cond
+
+        if is_variable(right):
+            left, right = right, left
+
+        if is_variable(left):
+            if is_variable(right):
+                code = """
+                LOAD a
+                SUB b
+                JZERO #FALSE1
+                JUMP @true
+                #FALSE1:
+                LOAD b
+                SUB a
+                JZERO #FALSE
+                JUMP @true
+                #FALSE:"""
+                self.parse(code, a=left, b=right, true=label)
+
+    def comp_gt(self, cond, label):
+        left, _, right = cond
+
+        if is_variable(right):
+            if is_variable(left):
+                code = """
+                LOAD a
+                SUB b
+                JZERO #FALSE
+                JUMP @label
+                #FALSE:
+                """
+                self.parse(code, a=left, b=right, label=label)
+
+    def comp_geq(self, cond, label):
+        left, _, right = cond
+
+        if is_variable(right):
+            if is_variable(left):
+                code = """
+                LOAD a
+                INC
+                SUB b
+                JZERO #FALSE
+                JUMP @true
+                #FALSE:
+                """
+                self.parse(code, a=left, b=right, true=label)
+
+    def comp_lt(self, cond, label):
+        self.comp_gt((cond[2], '>', cond[0]), label)
+
+    def comp_leq(self, cond, label):
+        self.comp_geq((cond[2], '<=', cond[0]), label)
 
     def parse(self, code, **variables):
         """
@@ -269,6 +394,7 @@ class Machine:
         # TODO: now I assume there are only variables, no numbers
         labels = {}
         cmds = []
+
         for c in [c.strip() for c in code.split("\n") if c.strip() != '']:
             left, right = (c.split(" ") + [None])[:2]
             if not right and left[1:-1] not in labels.keys() and left[0] == '#':
@@ -289,11 +415,14 @@ class Machine:
                     cmd=left,
                     param=self.mem[resolved]),
                 )
-            elif right[0] == '#':
+            elif right[0] == '#' and right[1:] not in labels.keys():
                 # new label, but as JUMP (kind of)
                 label_name = self.get_new_label()
                 labels[right[1:]] = label_name
                 cmds.append((left, label_name), )
+            elif right[0] == '#':
+                # not new label, but as JUMP (kind of)
+                cmds.append((left, labels[right[1:]]), )
             elif right[0] == '@':
                 # old label, replace with real name provided as kwarg
                 cmds.append((left, variables[right[1:]]), )
@@ -302,4 +431,5 @@ class Machine:
                     cmd=left,
                     param=right),
                 )
+
         self.code.extend(cmds)

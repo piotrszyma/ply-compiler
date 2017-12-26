@@ -31,7 +31,7 @@ def run_compiler(input_name, output_name):
         # perform semantic analyze
         symtab, ast = analyzer.analyze(parse_tree)
         # generate flow graph
-        flow_graph = flow_generator.generate(ast, main=True)
+        flow_graph = flow_generator.generate(ast)
         # generate code
         code = code_generator.generate(flow_graph, symtab)
 

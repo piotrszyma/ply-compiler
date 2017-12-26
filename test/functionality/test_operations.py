@@ -1,3 +1,5 @@
+import pytest
+
 from test.compiler_test_case import CompilerTestCase
 
 
@@ -43,6 +45,24 @@ class TestOperations(CompilerTestCase):
             '1'
         )
 
+    @pytest.mark.skip
+    def test_multiplication_should_work(self):
+        self.assertEqual(
+            self.compileAndRun(NUM_MULT),
+            '6'
+        )
+
+
+NUM_MULT = """
+VAR
+    a b
+BEGIN
+    b := 3;
+    a := 2;
+    a := a * b;
+    WRITE a;
+END
+"""
 
 NUM_SUBST = """
 VAR

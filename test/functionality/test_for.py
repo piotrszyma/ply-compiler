@@ -1,3 +1,5 @@
+import pytest
+
 from test.compiler_test_case import CompilerTestCase
 
 
