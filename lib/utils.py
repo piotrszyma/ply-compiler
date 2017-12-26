@@ -48,7 +48,10 @@ def get_symbol(a):
     if is_int(a):
         return a[1]
     elif is_inttab(a):
-        return str(a[1]) + '#' + str(a[2])
+        if is_number(a[2]):
+            return str(a[1]) + '#' + str(a[2])
+        else:
+            return a[1], a[2]
     elif is_swap(a):
         return a
 

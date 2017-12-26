@@ -45,7 +45,6 @@ class TestOperations(CompilerTestCase):
             '1'
         )
 
-    @pytest.mark.skip
     def test_multiplication_should_work(self):
         self.assertEqual(
             self.compileAndRun(NUM_MULT),

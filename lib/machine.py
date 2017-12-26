@@ -6,13 +6,15 @@ class Machine:
     slots = {
         'code',
         'mem',
-        'labels'
+        'labels',
+        'num_cache'
     }
 
     def __init__(self):
         self.labels = []
         self.code = []
         self.mem = {}
+        self.num_cache = {}
 
     def set_labels(self, flow):
         for c in flow:
@@ -55,6 +57,7 @@ class Machine:
             self.mem[symbol] = index
 
     def generate_number_in_register(self, number):
+        # TODO: cache numbers
         code = ['ZERO']
 
         if number != 0:
@@ -96,9 +99,13 @@ class Machine:
 
     def save_register_to_memory(self, target):
         symbol = get_symbol(target)
+        if is_variable(symbol):
+            import pdb; pdb.set_trace()
         self.code += ['STORE {}'.format(self.get_addr(symbol))]
 
     def get_addr(self, symbol):
+        if is_variable(symbol):
+            import pdb; pdb.set_trace()
         return self.mem[symbol]
 
     def assign(self, target, expression):

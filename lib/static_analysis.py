@@ -128,14 +128,15 @@ class StaticAnalyzer:
                     lineno=operand[2]
                 )
         elif is_inttab(operand):
-            name = '{arr_name}#{index}'.format(
-                arr_name=operand[1],
-                index=operand[2]
-            )
-            if name not in self.scope:
-                raise_error(
-                    msg="Undeclared variable {}".format(operand[1])
+            if is_number(operand[2]):
+                name = '{arr_name}#{index}'.format(
+                    arr_name=operand[1],
+                    index=operand[2]
                 )
+                if name not in self.scope:
+                    raise_error(
+                        msg="Undeclared variable {}".format(operand[1])
+                    )
         elif is_operation(operand):
             import pdb;
             pdb.set_trace()
