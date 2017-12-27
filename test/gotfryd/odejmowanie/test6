@@ -1,0 +1,1 @@
+VAR a[10] b[10] BEGIN a[0]:=99;b[0]:=98;a[1]:=a[0]-b[0];WRITE a[1];END

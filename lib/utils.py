@@ -63,3 +63,17 @@ def raise_error(msg, lineno=None):
     error_msg += msg
     logging.error(msg)
     raise CompilerError()
+
+
+def arr_sort(element):
+    hash_index = element.find('#')
+    arr_name = element[:hash_index - 1]
+    arr_index = int(element[hash_index + 1:])
+    return arr_name, arr_index
+
+
+def symtab_sort(symtab):
+    var_addr = list(filter(lambda x: '#' not in x, symtab))
+    arr_addr = sorted(list(filter(lambda x: '#' in x[1:], symtab)), key=arr_sort)
+    iter_addr = list(filter(lambda x: x[0] == '#', symtab))
+    return var_addr + arr_addr + iter_addr

@@ -1,0 +1,1 @@
+VAR a[999] b BEGIN a[756]:=3;b:=3;IF a[756] <= b THEN WRITE 1;ENDIF END

@@ -3,15 +3,19 @@ from test.compiler_test_case import CompilerTestCase
 
 class TestArray(CompilerTestCase):
     def test_should_properly_assign(self):
-        pass
+        self.assertOutputEquals(
+            ARRAY_ASSIGNS,
+            '3'
+        )
 
 
 ARRAY_ASSIGNS = """
 VAR
-    a[100]
+    a[100] b
 BEGIN
-    a := 1;
-    b := a;
-    WRITE b;
+    b := 1;
+    a[1] := 3;
+    a[2] := a[b];
+    WRITE a[2];
 END
 """

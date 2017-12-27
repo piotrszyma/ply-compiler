@@ -1,0 +1,1 @@
+VAR a b BEGIN a:=99/3;a:=a-32;WRITE a;END

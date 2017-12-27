@@ -1,5 +1,5 @@
 from lib.error import CompilerError
-from lib.utils import is_int, is_number, is_operation, is_inttab, get_symbol, is_label, is_variable
+from lib.utils import is_int, is_number, is_operation, is_inttab, get_symbol, is_label, is_variable, symtab_sort
 
 
 class Machine:
@@ -7,7 +7,8 @@ class Machine:
         'code',
         'mem',
         'labels',
-        'num_cache'
+        'num_cache',
+        'free_index'
     }
 
     def __init__(self):
@@ -15,6 +16,7 @@ class Machine:
         self.code = []
         self.mem = {}
         self.num_cache = {}
+        self.free_index = 0
 
     def set_labels(self, flow):
         for c in flow:
@@ -39,7 +41,7 @@ class Machine:
                 resolved.append(c)
 
         with open('labels_resolve', 'w') as f:
-            f.write('\n'.join(str(k) + ' ' + str(v) for k, v  in labels.items()))
+            f.write('\n'.join(str(k) + ' ' + str(v) for k, v in labels.items()))
 
         with open('half_resolve', 'w') as f:
             f.write('\n'.join(str(s) for s in resolved))
@@ -53,22 +55,52 @@ class Machine:
         for i in range(10):
             self.mem[i] = str(i)
 
-        for index, symbol in enumerate(symtab, 10):
+        for index, symbol in enumerate(symtab_sort(symtab), 10):
             self.mem[symbol] = index
 
+        self.free_index = 10 + len(symtab)
+
+    def generate_number(self, number, add=True):
+        code = []
+
+        mem_addr = '#{}'.format(number)
+        mem_val = self.mem.get(mem_addr, False)
+        if mem_val:
+            code += ['LOAD {}'.format(mem_val)]
+        else:
+            code = ['ZERO']
+
+            if number != 0:
+                number = bin(number)
+                code += ['INC']
+                for d in number[3:]:
+                    code += ['SHL']
+                    if d == '1':
+                        code += ['INC']
+
+            self.mem[mem_addr] = self.free_index
+            code += ['STORE {}'.format(self.free_index)]
+
+            self.free_index += 1
+        if add:
+            self.code += code
+        return "\n".join(code)
+
     def generate_number_in_register(self, number):
+        self.generate_number(number)
+        return
         # TODO: cache numbers
-        code = ['ZERO']
-
-        if number != 0:
-            number = bin(number)
-            code += ['INC']
-            for d in number[3:]:
-                code += ['SHL']
-                if d == '1':
-                    code += ['INC']
-
-        self.code += code
+        # code = ['ZERO']
+        #
+        # if number != 0:
+        #     number = bin(number)
+        #     code += ['INC']
+        #     for d in number[3:]:
+        #         code += ['SHL']
+        #         if d == '1':
+        #             code += ['INC']
+        #
+        # self.code += code
 
     def save_register_in_swap_mem(self, index):
         if 0 < index < 9:
@@ -86,26 +118,26 @@ class Machine:
         self.generate_number_in_register(number)
 
     def set_memory_in_register(self, source):
-        symbol = get_symbol(source)
-        self.code += ['LOAD {}'.format(self.get_addr(symbol))]
+        self.parse('LOAD a', a=source)
+        # import pdb; pdb.set_trace()
+        # symbol = get_symbol(source)
+        # self.code += ['LOAD {}'.format(self.get_addr(symbol))]
 
     def add_memory_to_register(self, source):
-        symbol = get_symbol(source)
-        self.code += ['ADD {}'.format(self.get_addr(symbol))]
+        self.parse('ADD a', a=source)
+        # symbol = get_symbol(source)
+        # self.code += ['ADD {}'.format(self.get_addr(symbol))]
 
     def sub_memory_from_register(self, source):
         symbol = get_symbol(source)
         self.code += ['SUB {}'.format(self.get_addr(symbol))]
 
     def save_register_to_memory(self, target):
+        # self.parse('STORE a', a=target)
         symbol = get_symbol(target)
-        if is_variable(symbol):
-            import pdb; pdb.set_trace()
         self.code += ['STORE {}'.format(self.get_addr(symbol))]
 
     def get_addr(self, symbol):
-        if is_variable(symbol):
-            import pdb; pdb.set_trace()
         return self.mem[symbol]
 
     def assign(self, target, expression):
@@ -113,7 +145,7 @@ class Machine:
         if is_operation(value):
             self.assign_operation(target, value)
         else:
-            if is_int(value[0]):
+            if is_variable(value[0]):
                 self.assign_variable(target, value[0])
             elif is_number(value[0]):
                 self.assign_number(target, value[0])
@@ -121,12 +153,18 @@ class Machine:
                 raise CompilerError("Unknown value type")
 
     def assign_variable(self, target, source):
-        self.set_memory_in_register(source)
-        self.save_register_to_memory(target)
+        code = """
+        LOAD a
+        STORE b
+        """
+        self.parse(code, a=source, b=target)
 
     def assign_number(self, target, source):
         self.generate_number_in_register(source)
-        self.save_register_to_memory(target)
+        code = """
+        STORE b
+        """
+        self.parse(code, b=target)
 
     def assign_operation(self, target, equation):
         sign, *operands = equation
@@ -197,7 +235,8 @@ class Machine:
         self.save_register_to_memory(target)
 
     def operation_divide(self, target, operands):
-        import pdb; pdb.set_trace()
+        import pdb;
+        pdb.set_trace()
 
     def operation_multiply(self, target, operands):
         [left, right] = operands
@@ -263,10 +302,10 @@ class Machine:
             self.write_number(value)
 
     def write_variable(self, source):
-        symbol = get_symbol(source)
-        code = ['LOAD {}'.format(self.get_addr(symbol))]
-        code += ['PUT']
-        self.code += code
+        code = """
+        LOAD a
+        PUT"""
+        self.parse(code, a=source)
 
     def write_number(self, value):
         self.generate_number_in_register(value)
@@ -291,13 +330,13 @@ class Machine:
     def check_if(self, cmd):
         _, cond, _, label = cmd
         comps = {
-            '=': self.comp_eq,
+            '=':  self.comp_eq,
             '<>': self.comp_neq,
-            '>': self.comp_gt,
+            '>':  self.comp_gt,
             '>=': self.comp_geq,
             '<=': self.comp_leq,
-            '<': self.comp_lt
-            
+            '<':  self.comp_lt
+
         }
         comps[cond[1]](cond, label)
 
@@ -411,17 +450,26 @@ class Machine:
                 # parse found label to ('label', tuple)
                 cmds.append(('label', label_name), )
             elif not right and left[0] == '#':
-                # if new label, but already parsed
+                # if new label, but unique name already generated
                 cmds.append(('label', labels[left[1:-1]]), )
             elif not right:
                 cmds.append(left)
             elif right in variables.keys():
                 # replace name with address
-                resolved = variables[right][1]
-                cmds.append('{cmd} {param}'.format(
-                    cmd=left,
-                    param=self.mem[resolved]),
-                )
+                variable = variables[right]
+                if is_inttab(variable):
+                    out = self.parse_array(left, variable)
+                    if out: cmds.append(out)
+                elif is_number(variable):
+                    import pdb; pdb.set_trace()
+                    out = self.parse_number(left, variable)
+                    if out: cmds.append(out)
+                else:
+                    resolved = variable[1]
+                    cmds.append('{cmd} {param}'.format(
+                        cmd=left,
+                        param=self.mem[resolved]),
+                    )
             elif right[0] == '#' and right[1:] not in labels.keys():
                 # new label, but as JUMP (kind of)
                 label_name = self.get_new_label()
@@ -440,3 +488,89 @@ class Machine:
                 )
 
         self.code.extend(cmds)
+
+    def parse_array(self, left, right):
+        _, var, index = right
+        if is_number(index):
+            addr = '{}#{}'.format(var, index)
+            return '{cmd} {param}'.format(
+                cmd=left,
+                param=self.mem[addr])
+        elif is_variable(index):
+            left += 'I'
+            arr_addr = self.mem['{}#0'.format(var)]
+            r0 = ('int', 0, 0)
+            r1 = ('int', 1, 1)
+
+            if left == 'LOADI':
+                self.generate_number(arr_addr)
+                code = """
+                ADD x
+                STORE r0
+                LOADI r0
+                """
+                self.parse(code, x=index, r0=r0)
+            elif left == 'STOREI':
+                code = """
+                STORE r0
+                """
+                code += self.generate_number(arr_addr, add=False)
+                code += """
+                ADD x
+                STORE r1
+                LOAD r0
+                STOREI r1
+                """
+                self.parse(code, x=index, r0=r0, r1=r1)
+            elif left == 'ADDI':
+                code = """
+                STORE r0
+                """
+                code += self.generate_number(arr_addr, add=False)
+                code += """
+                ADD x
+                STORE r1
+                LOAD r0
+                ADDI r1
+                """
+                self.parse(code, x=index, r0=r0, r1=r1)
+            elif left == 'SUBI':
+                code = """
+                STORE r0
+                """
+                code += self.generate_number(arr_addr, add=False)
+                code += """
+                ADD x
+                STORE r1
+                LOAD r0
+                SUBI r1
+                """
+                self.parse(code, x=index, r0=r0, r1=r1)
+
+            # left += 'I'
+            # arr_start = ('int[]', right[1], '0')
+            # r0 = ('int', 0, 0)
+            # code = """
+            # LOAD a
+            # ADD x
+            # STORE r0
+            # {cmd} r0""".format(cmd=left)
+            # self.parse(code, a=arr_start, x=index, r0=r0)
+
+    def parse_number(self, left, right):
+        if left == 'SUB':
+            import pdb; pdb.set_trace()
+            r0 = ('int', 0, 0)
+            r1 = ('int', 1, 1)
+            code = """
+            STORE r0
+            """
+            code += self.generate_number(right, add=False)
+            code += """
+            STORE r1
+            LOAD r0
+            SUB r1
+            """
+            self.parse(code, r0=r0, r1=r1)
+        else:
+            import pdb; pdb.set_trace()

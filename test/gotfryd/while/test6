@@ -1,0 +1,1 @@
+VAR a b[2] BEGIN a:=1;b[0]:=2;WHILE b[0] <> a DO WRITE 1; b[0]:=b[0]-1; ENDWHILE END

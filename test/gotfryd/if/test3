@@ -1,0 +1,1 @@
+VAR a b[10] BEGIN a:=3;b[3]:=19;IF b[a] > a THEN WRITE 1;ENDIF END

@@ -1,0 +1,1 @@
+VAR a b[10] c BEGIN a:=10;b[5]:=0;FOR i FROM a DOWNTO b[5] DO b[5]:=9;WRITE i;ENDFOR END

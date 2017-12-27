@@ -1,11 +1,13 @@
 ZERO
 INC
+STORE 12
 STORE 10
 ZERO
 INC
 SHL
 SHL
 INC
+STORE 13
 STORE 11
 ('label', 'label0')
 LOAD 10
@@ -14,8 +16,7 @@ SUB 11
 ('JZERO', 'label3')
 ('JUMP', 'label1')
 ('label', 'label3')
-ZERO
-INC
+LOAD 12
 ADD 10
 STORE 10
 LOAD 11

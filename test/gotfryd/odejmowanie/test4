@@ -1,0 +1,1 @@
+VAR a b[10] c BEGIN a:=6;c:=0;b[c]:=4;b[a]:=3;a:=b[c]-b[a];WRITE a;END

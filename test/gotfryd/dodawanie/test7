@@ -1,0 +1,1 @@
+VAR a b[10] BEGIN b[0]:=0;a:=1+b[0];WRITE a;END

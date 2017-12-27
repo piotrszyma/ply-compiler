@@ -1,0 +1,1 @@
+VAR a b[10] BEGIN a:=9999;b[0]:=3;a:=a%b[0];a:=a+1;WRITE a;END

@@ -1,0 +1,1 @@
+VAR a b BEGIN b:=0;a:=1+b;WRITE a;END

@@ -1,0 +1,1 @@
+VAR a b c[10] BEGIN a:=0;b:=1;c[0]:=31;c[b]:=3;c[a]:=c[a]%c[b];WRITE c[a];END
