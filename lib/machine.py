@@ -230,42 +230,74 @@ class Machine:
 
     def operation_divide(self, target, operands):
         [left, right] = operands
-        if is_variable(left):
-            if is_variable(right):
-                r0 = ('int', 0, 0)
-                r1 = ('int', 1, 0)
-                r2 = ('int', 2, 0)
-                # x * y = z
-                code = """
-                ZERO
-                STORE r2
-                LOAD x
-                STORE r0
-                LOAD y
-                STORE r1
-                
-                #SHIFT:
-                SHL y
-                
-                """
-                """
-                LOAD a
-                INC
-                SUB b
-                JZERO #FALSE
-                JUMP @true
-                #FALSE:
-                """
-                self.parse(code,
-                           r0=r0,
-                           r1=r1,
-                           r2=r2,
-                           x=left,
-                           y=right,
-                           z=target)
 
-        import pdb;
-        pdb.set_trace()
+        if is_variable(right):
+            if is_variable(left):
+                r0, r1, r2 = (('int', i, i) for i in range(1, 4))
+                # TODO: implement multiplication
+                code = """
+                        ZERO
+                        STORE r2
+                        LOAD x
+                        STORE r0
+                        LOAD y
+                        STORE r1
+
+                        #SHIFT:
+
+                        LOAD r1
+                        SHL
+                        STORE r1
+                        LOAD r0
+                        INC
+                        SUB r1
+                        JZERO #DIVISION
+                        JUMP #SHIFT
+
+                        #DIVISION:
+
+                        
+                        LOAD r1
+                        SHR
+                        STORE r1
+
+                        #LOOP:
+                        LOAD r0
+                        INC
+                        SUB r1
+                        JZERO #INC_END
+                        JUMP #ADD_INC
+
+                        #ADD_INC:
+                        LOAD r2
+                        INC
+                        STORE r2
+                        JUMP #INC_END
+
+                        #INC_END:
+                        LOAD r0
+                        SUB r1
+                        STORE r0
+                        LOAD r1
+                        SHR
+                        STORE r1
+                        
+                        JZERO #END
+                        
+                        LOAD r2
+                        SHL
+                        STORE r2
+                        
+                        JUMP #LOOP
+
+                        #END:
+                        LOAD r2
+                        SHR
+                        STORE z
+                        """
+                self.parse(code, x=left,
+                           y=right,
+                           z=target, r0=r0, r1=r1, r2=r2)
 
     def operation_modulo(self, target, operands):
         pass
