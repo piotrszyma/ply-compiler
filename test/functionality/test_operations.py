@@ -48,7 +48,7 @@ class TestOperations(CompilerTestCase):
     def test_multiplication_should_work(self):
         self.assertEqual(
             self.compileAndRun(NUM_MULT),
-            '6'
+            '246'
         )
 
 
@@ -56,8 +56,8 @@ NUM_MULT = """
 VAR
     a b
 BEGIN
-    b := 3;
-    a := 2;
+    b := 2;
+    a := 123;
     a := a * b;
     WRITE a;
 END

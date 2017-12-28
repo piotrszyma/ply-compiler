@@ -1,8 +1,19 @@
 VAR
-    a[5] b c
+    a b[10]
 BEGIN
-    FOR i FROM 1 TO 3 DO
-        a[i] := i;
-        WRITE i;
-    ENDFOR
-END
+    a := 3 - 2; (a=3)
+    ( asdasdasd asd asd
+    asd
+    as
+    s
+    ss
+
+    s
+    )
+    a := a - 100;
+    b[0] := 200;
+    b[1] := 199;
+    b[2] := b[0] - b[1]; (b[2] = 1)
+    b[2] := b[2] + a; (b[2] = 1)
+    WRITE b[2];
+END ( asdasd )

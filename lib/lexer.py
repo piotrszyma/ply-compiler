@@ -1,5 +1,7 @@
 import ply.lex as lex
 
+from lib.error import CompilerError
+
 
 class Lexer:
     tokens = (
@@ -70,8 +72,11 @@ class Lexer:
     t_LBRACKET = r'\['
     t_RBRACKET = r'\]'
 
-    t_ignore_COMMENT = r'\(.*\)'
-    t_ignore = ' \r\t'
+    t_ANY_ignore = ' \r\t'
+
+    states = (
+        ('comment', 'exclusive'),
+    )
 
     def __init__(self):
         self.lexer = lex.lex(module=self)
@@ -85,14 +90,29 @@ class Lexer:
             else:
                 break
 
+    def t_START_COMMENT(self, t):
+        r'\('
+        self.lexer.begin('comment')
+
+    def t_comment_END(self, t):
+        r'\)'
+        self.lexer.begin('INITIAL')
+
+    def t_comment_CONTENT(self, t):
+        r'.'
+        pass
+
+    def t_comment_eof(self, t):
+        raise CompilerError(" In line %d: Unterminated comment" % t.lexer.lineno)
+
     def t_NUMBER(self, t):
         r'\d+'
         t.value = int(t.value)
         return t
 
-    def t_newline(self, t):
+    def t_ANY_newline(self, t):
         r'\n+'
         t.lexer.lineno += len(t.value)
 
-    def t_error(self, t):
-        print("Illegal character '%s'" % t.value[0])
+    def t_ANY_error(self, t):
+        print(" In line %d: Illegal character '%s'" % t.lexer.lineno, t.value[0])

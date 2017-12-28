@@ -18,6 +18,11 @@ class TestIfStatement(CompilerTestCase):
             '7'
         )
 
+        self.assertOutputEquals(
+            IF_COMP,
+            '1'
+        )
+
     def test_nested_if_with_assign(self):
         self.assertEqual(
             self.compileAndRun(IF_WITH_IF_WITH_IF_WITH_ASSIGN),
@@ -45,6 +50,18 @@ class TestIfStatement(CompilerTestCase):
             '31'
         )
 
+
+IF_COMP = """
+VAR     
+    a b 
+BEGIN 
+    IF 1 = 5 THEN 
+        WRITE 0;
+    ELSE 
+        WRITE 1;
+    ENDIF 
+END
+"""
 
 IF_AFTER_IF_AFTER_IF = """
 VAR
