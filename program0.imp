@@ -1,25 +1,27 @@
 VAR
-    a b c
-BEGIN
-    a := 128;
-    b := 3;
-    c := a % b;
-    WRITE c;
-
-(
-    a := 54;
-    b := 6;
-    c := a / b;
-    a := 12;
-    b := 6;
-    WRITE a;
-    WRITE b;
-    c := a / b;
-
-
-    a := 6;
-    b := 6;
-    WRITE a;
-    WRITE b;
-    c := a / b; )
-END
+ n m reszta potega dzielnik
+ BEGIN
+ READ n;
+ dzielnik := 2;
+ m := dzielnik * dzielnik ;
+ WHILE n >= m DO
+ potega := 0;
+ reszta := n % dzielnik ;
+ WHILE reszta = 0 DO
+ n := n / dzielnik ;
+ potega := potega + 1;
+ reszta := n % dzielnik ;
+ ENDWHILE
+ IF potega > 0 THEN ( czy znaleziono dzielnik )
+ WRITE dzielnik ;
+ WRITE potega ;
+ ELSE
+ dzielnik := dzielnik + 1;
+ m := dzielnik * dzielnik ;
+ ENDIF
+ ENDWHILE
+ IF n <> 1 THEN ( ostatni dzielnik )
+WRITE n;
+ WRITE 1;
+ ENDIF
+ END

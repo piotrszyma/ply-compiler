@@ -53,6 +53,7 @@ class Machine:
             if isinstance(c, tuple):
                 resolved[i] = '{} {}'.format(c[0], labels[c[1]])
         self.code = resolved
+        print(str(self.mem))
 
     def generate_number(self, number, add=True):
         # code = []
@@ -149,7 +150,6 @@ class Machine:
 
     def operation_substract(self, target, operands):
         x, y = operands
-        import pdb; pdb.set_trace()
         if is_number(x):
             # t := 1 - 1
             if is_number(y):
@@ -157,7 +157,6 @@ class Machine:
             # t := 1 - a
             # t := 1 - a[x]
             elif is_variable(y):
-                import pdb; pdb.set_trace()
                 self.generate_number(x)
                 self.parse('SUB a', a=y)
         elif is_variable(x):
@@ -171,7 +170,6 @@ class Machine:
             # t := a - b
             # t := a - b[x]
             elif is_variable(y):
-                import pdb; pdb.set_trace()
                 self.parse('LOAD a', a=x)
                 self.parse('SUB a', a=y)
             else:
@@ -447,9 +445,17 @@ class Machine:
                     JZERO @label
                     """
                     self.parse(code, a=left, label=label)
+                elif right == 1:
+                    code = """
+                    LOAD a
+                    JZERO #FALSE
+                    DEC
+                    JZERO @label
+                    #FALSE:
+                    """
+                    self.parse(code, a=left, label=label)
                 else:
-                    import pdb;
-                    pdb.set_trace()
+                    raise CompilerError("Not implemented yet")
             else:
                 raise CompilerError()
         else:
@@ -477,13 +483,13 @@ class Machine:
                 #FALSE:"""
                 self.parse(code, a=left, b=right, true=label)
             elif is_number(right):
-                # v != 1
-                code = """
-                """
+                raise CompilerError("Not implemented yet")
 
         if is_number(left) and is_number(right):
             if left != right:
                 self.parse('JUMP @true', true=label)
+
+        raise CompilerError("Not implemented yet")
 
     def comp_gt(self, cond, label):
         left, _, right = cond
@@ -498,6 +504,8 @@ class Machine:
                 #FALSE:
                 """
                 self.parse(code, a=left, b=right, label=label)
+            raise CompilerError("Not implemented yet")
+        raise CompilerError("Not implemented yet")
 
     def comp_geq(self, cond, label):
         left, _, right = cond
@@ -513,6 +521,9 @@ class Machine:
                 #FALSE:
                 """
                 self.parse(code, a=left, b=right, true=label)
+
+            raise CompilerError("Not implemented yet")
+        raise CompilerError("Not implemented yet")
 
     def comp_lt(self, cond, label):
         self.comp_gt((cond[2], '>', cond[0]), label)
@@ -616,7 +627,6 @@ class Machine:
                 """
                 self.parse(code, x=index, r9=r9, r8=r8)
             elif left == 'SUBI':
-                import pdb; pdb.set_trace()
                 # TODO: fix substraction for arrays!
                 code = """
                 STORE r9
@@ -627,7 +637,6 @@ class Machine:
                 STORE r8
                 LOAD r9
                 SUBI r8
-                PUT
                 """
                 self.parse(code, x=index, r9=r9, r8=r8)
 

@@ -100,6 +100,7 @@ class Lexer:
 
     def t_comment_CONTENT(self, t):
         r'.'
+        # print(t.value, end="")
         pass
 
     def t_comment_eof(self, t):
@@ -112,6 +113,7 @@ class Lexer:
 
     def t_ANY_newline(self, t):
         r'\n+'
+        # print("")
         t.lexer.lineno += len(t.value)
 
     def t_ANY_error(self, t):

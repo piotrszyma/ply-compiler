@@ -67,7 +67,7 @@ def raise_error(msg, lineno=None):
 
 def arr_sort(element):
     hash_index = element.find('#')
-    arr_name = element[:hash_index - 1]
+    arr_name = element[:hash_index]
     arr_index = int(element[hash_index + 1:])
     return arr_name, arr_index
 
