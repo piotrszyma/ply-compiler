@@ -1,8 +1,24 @@
 VAR
     a b c
 BEGIN
-    a := 128;
-    b := 4;
+    a := 27;
+    b := 8;
     c := a / b;
-    WRITE c;
+
+(
+    a := 54;
+    b := 6;
+    c := a / b;
+    a := 12;
+    b := 6;
+    WRITE a;
+    WRITE b;
+    c := a / b;
+
+
+    a := 6;
+    b := 6;
+    WRITE a;
+    WRITE b;
+    c := a / b; )
 END

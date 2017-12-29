@@ -115,4 +115,7 @@ class Lexer:
         t.lexer.lineno += len(t.value)
 
     def t_ANY_error(self, t):
-        print(" In line %d: Illegal character '%s'" % t.lexer.lineno, t.value[0])
+        if t.value[0] == ')':
+            print(" In line {}: Are you trying to close unopened comment?".format(t.lexer.lineno))
+        else:
+            print(" In line {}: Illegal character '{}'".format(t.lexer.lineno, t.value[0]))

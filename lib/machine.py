@@ -233,8 +233,9 @@ class Machine:
 
         if is_variable(right):
             if is_variable(left):
-                r0, r1, r2 = (('int', i, i) for i in range(1, 4))
-                # TODO: implement multiplication
+                r0, r1, r2, r3 = (('int', i, i) for i in range(4))
+                import pdb; pdb.set_trace()
+                # TODO: implement division
                 code = """
                         ZERO
                         STORE r2
@@ -242,62 +243,65 @@ class Machine:
                         STORE r0
                         LOAD y
                         STORE r1
+                        STORE r3
 
                         #SHIFT:
-
                         LOAD r1
                         SHL
                         STORE r1
                         LOAD r0
                         INC
                         SUB r1
-                        JZERO #DIVISION
+                        JZERO #ADJUST
                         JUMP #SHIFT
 
-                        #DIVISION:
-
-                        
+                        #ADJUST:
                         LOAD r1
                         SHR
                         STORE r1
-
-                        #LOOP:
+                        
+                        #DIV_LOOP:
+                        LOAD r2
+                        INC
+                        SHL
+                        STORE r2
+                        
+                        
+                        
                         LOAD r0
                         INC
                         SUB r1
-                        JZERO #INC_END
-                        JUMP #ADD_INC
-
-                        #ADD_INC:
+                        JZERO #POST_INC
+                        JUMP #INC_ADD
+                        
+                        #INC_ADD:
                         LOAD r2
                         INC
                         STORE r2
-                        JUMP #INC_END
-
-                        #INC_END:
                         LOAD r0
                         SUB r1
                         STORE r0
+                        LOAD r3
+                        SUB r0
+                        JZERO #POST_INC
+                        JUMP #END
+                        
+                        #POST_INC:
                         LOAD r1
                         SHR
                         STORE r1
+                        JUMP #DIV_LOOP
                         
-                        JZERO #END
-                        
-                        LOAD r2
-                        SHL
-                        STORE r2
-                        
-                        JUMP #LOOP
-
                         #END:
                         LOAD r2
-                        SHR
-                        STORE z
+                        PUT
+                        LOAD r0
+                        PUT
                         """
-                self.parse(code, x=left,
+                self.parse(code,
+                           x=left,
                            y=right,
-                           z=target, r0=r0, r1=r1, r2=r2)
+                           z=target, r0=r0, r1=r1, r2=r2, r3=r3)
 
     def operation_modulo(self, target, operands):
         pass
