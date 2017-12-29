@@ -455,11 +455,11 @@ class Machine:
                     """
                     self.parse(code, a=left, label=label)
                 else:
-                    raise CompilerError("Not implemented yet")
+                    import pdb; pdb.set_trace()
             else:
                 raise CompilerError()
         else:
-            raise CompilerError("Not implemented")
+            import pdb; pdb.set_trace()
             # TODO: implement for numbers
 
     def comp_neq(self, cond, label):
@@ -483,13 +483,12 @@ class Machine:
                 #FALSE:"""
                 self.parse(code, a=left, b=right, true=label)
             elif is_number(right):
-                raise CompilerError("Not implemented yet")
-
-        if is_number(left) and is_number(right):
+                import pdb; pdb.set_trace()
+        elif is_number(left) and is_number(right):
             if left != right:
                 self.parse('JUMP @true', true=label)
-
-        raise CompilerError("Not implemented yet")
+        else:
+            import pdb; pdb.set_trace()
 
     def comp_gt(self, cond, label):
         left, _, right = cond
@@ -504,8 +503,19 @@ class Machine:
                 #FALSE:
                 """
                 self.parse(code, a=left, b=right, label=label)
-            raise CompilerError("Not implemented yet")
-        raise CompilerError("Not implemented yet")
+            else:
+                import pdb; pdb.set_trace()
+        elif is_number(left):
+            if is_number(right):
+                if left > right:
+                    self.parse("JUMP @label", label=label)
+                else:
+                    # left < right so false
+                    pass
+            else:
+                import pdb; pdb.set_trace()
+        else:
+            import pdb; pdb.set_trace()
 
     def comp_geq(self, cond, label):
         left, _, right = cond
@@ -521,9 +531,10 @@ class Machine:
                 #FALSE:
                 """
                 self.parse(code, a=left, b=right, true=label)
-
-            raise CompilerError("Not implemented yet")
-        raise CompilerError("Not implemented yet")
+            else:
+                import pdb; pdb.set_trace()
+        else:
+            import pdb; pdb.set_trace()
 
     def comp_lt(self, cond, label):
         self.comp_gt((cond[2], '>', cond[0]), label)
