@@ -1,9 +1,10 @@
 VAR
     a b c
 BEGIN
-    a := 27;
-    b := 8;
-    c := a / b;
+    a := 128;
+    b := 3;
+    c := a % b;
+    WRITE c;
 
 (
     a := 54;

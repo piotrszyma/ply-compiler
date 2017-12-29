@@ -149,6 +149,7 @@ class Machine:
 
     def operation_substract(self, target, operands):
         x, y = operands
+        import pdb; pdb.set_trace()
         if is_number(x):
             # t := 1 - 1
             if is_number(y):
@@ -156,9 +157,9 @@ class Machine:
             # t := 1 - a
             # t := 1 - a[x]
             elif is_variable(y):
+                import pdb; pdb.set_trace()
                 self.generate_number(x)
                 self.parse('SUB a', a=y)
-
         elif is_variable(x):
             # t := a - 1
             r0 = ('int', 0, 0)
@@ -170,6 +171,7 @@ class Machine:
             # t := a - b
             # t := a - b[x]
             elif is_variable(y):
+                import pdb; pdb.set_trace()
                 self.parse('LOAD a', a=x)
                 self.parse('SUB a', a=y)
             else:
@@ -234,8 +236,6 @@ class Machine:
         if is_variable(right):
             if is_variable(left):
                 r0, r1, r2, r3 = (('int', i, i) for i in range(4))
-                import pdb; pdb.set_trace()
-                # TODO: implement division
                 code = """
                         ZERO
                         STORE r2
@@ -260,43 +260,43 @@ class Machine:
                         SHR
                         STORE r1
                         
-                        #DIV_LOOP:
-                        LOAD r2
-                        INC
-                        SHL
-                        STORE r2
-                        
-                        
-                        
-                        LOAD r0
-                        INC
+                        #LOOP:
+                        LOAD r3
                         SUB r1
-                        JZERO #POST_INC
-                        JUMP #INC_ADD
+                        JZERO #DIVISION
+                        JUMP #END
                         
-                        #INC_ADD:
+                        #DIVISION:
+                        LOAD r1
+                        SUB r0
+                        JZERO #ADD
+                        JUMP #NO_ADD
+                        
+                        #ADD:
                         LOAD r2
+                        SHL
                         INC
                         STORE r2
                         LOAD r0
                         SUB r1
                         STORE r0
-                        LOAD r3
-                        SUB r0
-                        JZERO #POST_INC
-                        JUMP #END
-                        
-                        #POST_INC:
                         LOAD r1
                         SHR
                         STORE r1
-                        JUMP #DIV_LOOP
+                        JUMP #LOOP
+                        
+                        #NO_ADD:
+                        LOAD r2
+                        SHL
+                        STORE r2
+                        LOAD r1
+                        SHR
+                        STORE r1
+                        JUMP #LOOP
                         
                         #END:
                         LOAD r2
-                        PUT
-                        LOAD r0
-                        PUT
+                        STORE z
                         """
                 self.parse(code,
                            x=left,
@@ -304,7 +304,77 @@ class Machine:
                            z=target, r0=r0, r1=r1, r2=r2, r3=r3)
 
     def operation_modulo(self, target, operands):
-        pass
+        [left, right] = operands
+
+        if is_variable(right):
+            if is_variable(left):
+                r0, r1, r2, r3 = (('int', i, i) for i in range(4))
+                code = """
+                        ZERO
+                        STORE r2
+                        LOAD x
+                        STORE r0
+                        LOAD y
+                        STORE r1
+                        STORE r3
+
+                        #SHIFT:
+                        LOAD r1
+                        SHL
+                        STORE r1
+                        LOAD r0
+                        INC
+                        SUB r1
+                        JZERO #ADJUST
+                        JUMP #SHIFT
+
+                        #ADJUST:
+                        LOAD r1
+                        SHR
+                        STORE r1
+
+                        #LOOP:
+                        LOAD r3
+                        SUB r1
+                        JZERO #DIVISION
+                        JUMP #END
+
+                        #DIVISION:
+                        LOAD r1
+                        SUB r0
+                        JZERO #ADD
+                        JUMP #NO_ADD
+
+                        #ADD:
+                        LOAD r2
+                        SHL
+                        INC
+                        STORE r2
+                        LOAD r0
+                        SUB r1
+                        STORE r0
+                        LOAD r1
+                        SHR
+                        STORE r1
+                        JUMP #LOOP
+
+                        #NO_ADD:
+                        LOAD r2
+                        SHL
+                        STORE r2
+                        LOAD r1
+                        SHR
+                        STORE r1
+                        JUMP #LOOP
+
+                        #END:
+                        LOAD r0
+                        STORE z
+                        """
+                self.parse(code,
+                           x=left,
+                           y=right,
+                           z=target, r0=r0, r1=r1, r2=r2, r3=r3)
 
     def write(self, value):
         if is_variable(value):
@@ -546,6 +616,8 @@ class Machine:
                 """
                 self.parse(code, x=index, r9=r9, r8=r8)
             elif left == 'SUBI':
+                import pdb; pdb.set_trace()
+                # TODO: fix substraction for arrays!
                 code = """
                 STORE r9
                 """
@@ -555,6 +627,7 @@ class Machine:
                 STORE r8
                 LOAD r9
                 SUBI r8
+                PUT
                 """
                 self.parse(code, x=index, r9=r9, r8=r8)
 
