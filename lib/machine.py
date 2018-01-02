@@ -2,6 +2,19 @@ from lib.error import CompilerError
 from lib.utils import is_int, is_number, is_operation, is_inttab, get_symbol, is_label, is_variable, symtab_sort
 
 
+class Reg:
+    r0 = ('int', 0, 0)
+    r1 = ('int', 1, 1)
+    r2 = ('int', 2, 2)
+    r3 = ('int', 3, 3)
+    r4 = ('int', 4, 4)
+    r5 = ('int', 5, 5)
+    r6 = ('int', 6, 6)
+    r7 = ('int', 7, 7)
+    r8 = ('int', 8, 8)
+    r9 = ('int', 9, 9)
+
+
 class Machine:
     slots = {
         'code',
@@ -418,123 +431,148 @@ class Machine:
 
     def comp_eq(self, cond, label):
         left, _, right = cond
-        if is_variable(right):
-            left, right = right, left
+        code = ""
 
-        if is_variable(left):
-            # now left must be an int
-            if is_variable(right):
-                # two ints
-                code = """
-                LOAD a
-                SUB b
-                JZERO #LABEL1
-                JUMP #FALSE
-                #LABEL1:
-                LOAD b
-                SUB a
-                JZERO @label
-                #FALSE:
-                """
-                self.parse(code, a=left, b=right, label=label)
-            elif is_number(right):
-                # a = 1
-                if right == 0:
-                    code = """
-                    LOAD a
-                    JZERO @label
-                    """
-                    self.parse(code, a=left, label=label)
-                elif right == 1:
-                    code = """
-                    LOAD a
-                    JZERO #FALSE
-                    DEC
-                    JZERO @label
-                    #FALSE:
-                    """
-                    self.parse(code, a=left, label=label)
-                else:
-                    import pdb; pdb.set_trace()
-            else:
-                raise CompilerError()
-        else:
-            import pdb; pdb.set_trace()
-            # TODO: implement for numbers
+        if is_number(left) and is_number(right):
+            if left != right:
+                return
+
+        if left == right:
+            self.parse('JUMP @label', label=label)
+            return
+
+        if is_number(left):
+            code += """
+            GENERATE l_val
+            STORE left
+            """
+
+        if is_number(right):
+            code += """
+            GENERATE r_val
+            STORE right
+            """
+
+        code += """
+        LOAD left
+        SUB right
+        JZERO #LABEL1
+        JUMP #FALSE
+        #LABEL1:
+        LOAD right
+        SUB left
+        JZERO @label
+        #FALSE:
+        """
+
+        self.parse(code,
+                   l_val=left,
+                   r_val=right,
+                   left=left if is_variable(left) else Reg.r0,
+                   right=right if is_variable(right) else Reg.r1,
+                   label=label
+                   )
 
     def comp_neq(self, cond, label):
         left, _, right = cond
+        code = ""
 
-        if is_variable(right):
-            left, right = right, left
+        if is_number(left):
+            code += """
+               GENERATE l_val
+               STORE left
+               """
 
-        if is_variable(left):
-            if is_variable(right):
-                code = """
-                LOAD a
-                SUB b
-                JZERO #FALSE1
-                JUMP @true
-                #FALSE1:
-                LOAD b
-                SUB a
-                JZERO #FALSE
-                JUMP @true
-                #FALSE:"""
-                self.parse(code, a=left, b=right, true=label)
-            elif is_number(right):
-                import pdb; pdb.set_trace()
-        elif is_number(left) and is_number(right):
-            if left != right:
-                self.parse('JUMP @true', true=label)
-        else:
-            import pdb; pdb.set_trace()
+        if is_number(right):
+            code += """
+               GENERATE r_val
+               STORE right
+               """
+
+        code += """
+            LOAD left
+            SUB right
+            JZERO #FALSE1
+            JUMP @label
+            #FALSE1:
+            LOAD right
+            SUB left
+            JZERO #FALSE
+            JUMP @label
+            #FALSE:
+            """
+
+        self.parse(code,
+                   l_val=left,
+                   r_val=right,
+                   left=left if is_variable(left) else Reg.r0,
+                   right=right if is_variable(right) else Reg.r1,
+                   label=label
+                   )
 
     def comp_gt(self, cond, label):
         left, _, right = cond
+        code = ""
 
-        if is_variable(right):
-            if is_variable(left):
-                code = """
-                LOAD a
-                SUB b
-                JZERO #FALSE
-                JUMP @label
-                #FALSE:
-                """
-                self.parse(code, a=left, b=right, label=label)
-            else:
-                import pdb; pdb.set_trace()
-        elif is_number(left):
-            if is_number(right):
-                if left > right:
-                    self.parse("JUMP @label", label=label)
-                else:
-                    # left < right so false
-                    pass
-            else:
-                import pdb; pdb.set_trace()
-        else:
-            import pdb; pdb.set_trace()
+        if is_number(left):
+            code += """
+            GENERATE l_val
+            STORE left
+            """
+
+        if is_number(right):
+            code += """
+            GENERATE r_val
+            STORE right
+            """
+
+        code += """
+        LOAD left
+        SUB right
+        JZERO #FALSE
+        JUMP @label
+        #FALSE:
+        """
+
+        self.parse(code,
+                   l_val=left,
+                   r_val=right,
+                   left=left if is_variable(left) else Reg.r0,
+                   right=right if is_variable(right) else Reg.r1,
+                   label=label
+                   )
 
     def comp_geq(self, cond, label):
         left, _, right = cond
+        code = ""
+        if is_number(left):
+            code += """
+            GENERATE l_val
+            STORE left
+            """
 
-        if is_variable(right):
-            if is_variable(left):
-                code = """
-                LOAD a
-                INC
-                SUB b
-                JZERO #FALSE
-                JUMP @true
-                #FALSE:
-                """
-                self.parse(code, a=left, b=right, true=label)
-            else:
-                import pdb; pdb.set_trace()
-        else:
-            import pdb; pdb.set_trace()
+        if is_number(right):
+            code += """
+            GENERATE r_val
+            STORE right
+            """
+
+        code += """
+        LOAD left
+        INC
+        SUB right
+        JZERO #FALSE
+        JUMP @label
+        #FALSE:
+        """
+
+        self.parse(code,
+                   l_val=left,
+                   r_val=right,
+                   left=left if is_variable(left) else Reg.r0,
+                   right=right if is_variable(right) else Reg.r1,
+                   label=label
+                   )
 
     def comp_lt(self, cond, label):
         self.comp_gt((cond[2], '>', cond[0]), label)
@@ -552,7 +590,11 @@ class Machine:
         labels = {}
         for c in [c.strip() for c in code.split("\n") if c.strip() != '']:
             left, right = (c.split(" ") + [None])[:2]
-            if not right and left[1:-1] not in labels.keys() and left[0] == '#':
+            if left == 'GENERATE':
+                number = int(variables[right])
+                cmds = self.generate_number(number, False).split('\n')
+                self.code.extend(cmds)
+            elif not right and left[1:-1] not in labels.keys() and left[0] == '#':
                 # for new labels, generate unique labels names
                 label_name = self.get_new_label()
                 labels[left[1:-1]] = label_name
@@ -570,7 +612,6 @@ class Machine:
                     self.parse_array(left, variable)
                 elif is_number(variable):
                     self.parse_number(left, variable)
-                    if out: self.code.append(out)
                 else:
                     resolved = variable[1]
                     self.code.extend(['{cmd} {param}'.format(
@@ -603,8 +644,6 @@ class Machine:
         elif is_variable(index):
             left += 'I'
             arr_addr = self.mem['{}#0'.format(var)]
-            r9 = ('int', 9, 9)
-            r8 = ('int', 8, 8)
             if left == 'LOADI':
                 self.generate_number(arr_addr)
                 code = """
@@ -612,7 +651,7 @@ class Machine:
                 STORE r9
                 LOADI r9
                 """
-                self.parse(code, x=index, r9=r9)
+                self.parse(code, x=index, r9=Reg.r9)
             elif left == 'STOREI':
                 code = """
                 STORE r9
@@ -624,7 +663,7 @@ class Machine:
                 LOAD r9
                 STOREI r8
                 """
-                self.parse(code, x=index, r9=r9, r8=r8)
+                self.parse(code, x=index, r9=Reg.r9, r8=Reg.r8)
             elif left == 'ADDI':
                 code = """
                 STORE r9
@@ -636,7 +675,7 @@ class Machine:
                 LOAD r9
                 ADDI r8
                 """
-                self.parse(code, x=index, r9=r9, r8=r8)
+                self.parse(code, x=index, r9=Reg.r1, r8=Reg.r8)
             elif left == 'SUBI':
                 # TODO: fix substraction for arrays!
                 code = """
@@ -649,7 +688,7 @@ class Machine:
                 LOAD r9
                 SUBI r8
                 """
-                self.parse(code, x=index, r9=r9, r8=r8)
+                self.parse(code, x=index, r9=Reg.r9, r8=Reg.r8)
 
     def parse_number(self, left, right):
         if left == 'SUB':
@@ -664,7 +703,7 @@ class Machine:
             LOAD r0
             SUB r1
             """
-            self.parse(code, r0=r0, r1=r1)
+            self.parse(code, r0=Reg.r0, r1=r1)
         else:
             import pdb;
             pdb.set_trace()

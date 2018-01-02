@@ -2,9 +2,12 @@
 VAR
     a b
 BEGIN
-    a := 3;
-    b := 1;
-    FOR i FROM a DOWNTO b DO
-        WRITE i;
-    ENDFOR
+    a := 1;
+    b := 5;
+    WHILE a < b DO
+        a := a + 1;
+        IF a = b THEN
+            WRITE a;
+        ENDIF
+    ENDWHILE
 END
