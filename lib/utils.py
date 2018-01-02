@@ -25,7 +25,7 @@ def is_expression(a):
 
 def is_inttab(a):
     return isinstance(a, tuple) \
-           and len(a) == 3 \
+           and len(a) == 4 \
            and a[0] == 'int[]'
 
 
@@ -49,7 +49,7 @@ def raise_error(msg, lineno=None):
     if lineno:
         error_msg += " in line {0}: ".format(lineno)
     error_msg += msg
-    logging.error(msg)
+    logging.error(error_msg)
     raise CompilerError()
 
 

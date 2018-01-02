@@ -1,9 +1,9 @@
 VAR
-    a b[10] c
+    a b
 BEGIN
-    a := 20;
-    c := 0;
-    b[c] := a / 5;
-    b[c] := b[c] - 3;
-    WRITE b[c];
+    a := 1;
+    b := 3;
+    FOR i FROM a TO b DO
+        WRITE i;
+    ENDFOR
 END

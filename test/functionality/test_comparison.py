@@ -78,10 +78,8 @@ BEGIN
     b := 0;
     IF a < b THEN WRITE 106; ENDIF
 
-
-    b := 2;
+    d := 0;
     IF d < a THEN WRITE 4; ENDIF
-
 
     c[0] := 0;
     IF a < c[0] THEN WRITE 107; ENDIF
@@ -115,6 +113,7 @@ BEGIN
     IF 1 < 1 THEN WRITE 113; ENDIF
     IF 2 < 1 THEN WRITE 114; ENDIF
 END
+
 """
 
 AGTB = """

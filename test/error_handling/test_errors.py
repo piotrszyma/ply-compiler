@@ -7,6 +7,16 @@ class TestErrors(CompilerTestCase):
         self.assertReturnCodeIsError(UNDECLARED_VARIABLE)
 
 
+GLOBAL_AS_ITERATOR = """
+VAR
+    i
+BEGIN
+    FOR i FROM 1 TO 3 DO
+        WRITE i;
+    ENDFOR
+END
+"""
+
 ERRORNEUS_CODE = """
 ( Błąd w linii 3: druga deklaracja a )
 VAR

@@ -592,7 +592,7 @@ class Machine:
                     param=right),)])
 
     def parse_array(self, left, right):
-        _, var, index = right
+        _, var, index, *_ = right
         if is_number(index):
             addr = '{}#{}'.format(var, index)
             code = '{cmd} {param}'.format(

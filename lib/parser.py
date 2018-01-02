@@ -129,11 +129,11 @@ class Parser:
     def p_identifier_table_id(self, p):
         'identifier : PIDENTIFIER LBRACKET PIDENTIFIER RBRACKET'
         val = ('int', p[3], p.lineno(3))
-        p[0] = ('int[]', p[1], val)
+        p[0] = ('int[]', p[1], val, p.lineno(3))
 
     def p_identifier_table_number(self, p):
         'identifier : PIDENTIFIER LBRACKET NUMBER RBRACKET'
-        p[0] = ('int[]', p[1], p[3])
+        p[0] = ('int[]', p[1], p[3], p.lineno(3))
 
     # empty
 

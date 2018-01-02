@@ -7,12 +7,14 @@ from lib.utils import is_variable, raise_error, is_int, is_inttab, is_operation,
 class StaticAnalyzer:
     __slots__ = {
         'scope',
-        'symbols'
+        'symbols',
+        'initialized'
     }
 
     def __init__(self):
         self.symbols = set()
         self.scope = set()
+        self.initialized = {}
 
     def add_to_scope(self, var):
         self.symbols.add(var)
@@ -41,7 +43,6 @@ class StaticAnalyzer:
                     msg='double declaration of {}'.format(val),
                     lineno=lineno
                 )
-                raise CompilerError()
             if kind == 'int[]':
                 [size] = details
                 seen.extend([val + '#' + str(i) for i in range(size)])
@@ -56,6 +57,10 @@ class StaticAnalyzer:
 
     def check_assign(self, cmd):
         _, left, right = cmd
+        # TODO: check left
+        # if is_variable(right):
+        #     import pdb; pdb.set_trace()
+        # elif is_expression()
         self.check_scope(left)
         self.check_scope(right)
 
@@ -86,37 +91,37 @@ class StaticAnalyzer:
         pass
 
     def check_for_up(self, cmd):
-        _, iterator, start, end, cmds = cmd
+        _, (_, iter_symbol, iter_lineno), start, end, cmds = cmd
         # TODO: check if iterator is not array, number
-        if iterator in self.symbols:
+        if iter_symbol in self.symbols:
             raise_error(
-                msg="trying to set previously declared variable '{0}' as iterator".format(iterator[1]),
-                lineno=iterator[2]
+                msg="trying to set previously declared variable '{0}' as iterator".format(iter_symbol),
+                lineno=iter_lineno
             )
             raise CompilerError()
-        self.add_to_scope(iterator[1])
+        self.add_to_scope(iter_symbol)
         self.analyze(cmds)
-        self.remove_from_scope(iterator[1])
-        # with # means -> counter for this loop
-        self.add_to_symbols(iterator[1])
-        self.add_to_symbols('#' + iterator[1])
+        self.remove_from_scope(iter_symbol)
+        # symbol with # means counter for loop
+        self.add_to_symbols(iter_symbol)
+        self.add_to_symbols('#' + iter_symbol)
 
     def check_for_down(self, cmd):
         # TODO: check if iterator is not array, number
-        _, iterator, start, end, cmds = cmd
+        _, (_, iter_symbol, iter_lineno), start, end, cmds = cmd
         # TODO: check if iterator is not array, number
-        if iterator in self.symbols:
+        if iter_symbol in self.symbols:
             raise_error(
-                msg="trying to set previously declared variable '{0}' as iterator".format(iterator[1]),
-                lineno=iterator[2]
+                msg="trying to set previously declared variable '{0}' as iterator".format(iter_symbol),
+                lineno=iter_lineno
             )
             raise CompilerError()
-        self.add_to_scope(iterator[1])
+        self.add_to_scope(iter_symbol)
         self.analyze(cmds)
-        self.remove_from_scope(iterator[1])
+        self.remove_from_scope(iter_symbol)
         # with # means -> counter for this loop
-        self.add_to_symbols(iterator[1])
-        self.add_to_symbols('#' + iterator[1])
+        self.add_to_symbols(iter_symbol)
+        self.add_to_symbols('#' + iter_symbol)
 
     def check_scope(self, operand):
         if is_number(operand):
@@ -129,13 +134,22 @@ class StaticAnalyzer:
                 )
         elif is_inttab(operand):
             if is_number(operand[2]):
+                arr_start = '{arr_name}#{index}'.format(
+                    arr_name=operand[1],
+                    index=0
+                )
                 name = '{arr_name}#{index}'.format(
                     arr_name=operand[1],
                     index=operand[2]
                 )
+                if arr_start not in self.scope:
+                    if operand[1] in self.scope:
+                        raise_error("Trying to assign to array '{}' without specifing index".format(operand[1]))
+                    raise_error("Undeclared array {}".format(operand[1]))
                 if name not in self.scope:
+                    import pdb; pdb.set_trace()
                     raise_error(
-                        msg="Undeclared variable {}".format(operand[1])
+                        msg="Array index out of range {}".format(operand[1])
                     )
         elif is_operation(operand):
             import pdb;
