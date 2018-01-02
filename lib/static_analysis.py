@@ -56,20 +56,46 @@ class StaticAnalyzer:
             # TODO: commands check
 
     def check_assign(self, cmd):
-        _, left, right = cmd
-        # TODO: check left
-        # if is_variable(right):
-        #     import pdb; pdb.set_trace()
-        # elif is_expression()
-        self.check_scope(left)
-        self.check_scope(right)
+        _, target, expression = cmd
+        self.check_scope(target)
+        self.check_expression(expression)
+        if is_int(target):
+            _, symbol, _ = target
+        elif is_inttab(target):
+            _, symbol, index, _ = target
+            symbol = '#'.join([symbol, str(index)])
+        else:
+            raise CompilerError("Unexpected target type")
+        self.initialized[symbol] = True
 
     def check_expression(self, cmd):
-        if cmd[1][1] not in self.scope:
-            raise_error(
-                msg="undeclared variable {0} ".format(cmd[1][1]),
-                lineno=cmd[1][2]
-            )
+        _, *expression = cmd
+        if len(expression) == 1:
+            [var] = expression
+            if is_variable(var):
+                self.check_variable(var)
+                self.check_if_initialized(var)
+        elif len(expression) == 3:
+            [_, l_var, r_var] = expression
+            for var in [l_var, r_var]:
+                if is_variable(var):
+                    self.check_variable(var)
+                    self.check_if_initialized(var)
+        else:
+            raise CompilerError("Unexpected expression")
+
+    def check_if_initialized(self, var):
+        if is_int(var):
+            _, symbol, lineno = var
+            if not self.initialized.get(symbol, False):
+                raise_error("Usage of uninitialized variable '{symbol}'".format(symbol=symbol), lineno)
+        elif is_inttab(var):
+            _, symbol, index, lineno = var
+            if not is_number(index):
+                return
+            symbol = '#'.join([symbol, str(index)])
+            if not self.initialized.get(symbol, False):
+                raise_error("Usage of uninitialized array element '{symbol}'".format(symbol=symbol), lineno)
 
     def check_write(self, cmd):
         _, operand = cmd
@@ -119,9 +145,48 @@ class StaticAnalyzer:
         self.add_to_scope(iter_symbol)
         self.analyze(cmds)
         self.remove_from_scope(iter_symbol)
-        # with # means -> counter for this loop
+        # with # means counter for this loop
         self.add_to_symbols(iter_symbol)
         self.add_to_symbols('#' + iter_symbol)
+
+    def check_variable(self, variable):
+        if is_int(variable):
+            self.check_int(variable)
+        elif is_inttab(variable):
+            self.check_inttab(variable)
+        else:
+            import pdb; pdb.set_trace()
+            raise CompilerError("Unexpected variable type")
+
+    def check_inttab(self, variable):
+        _, symbol, index, lineno = variable
+
+        arr_start = '#'.join([symbol, '0'])
+
+        if arr_start not in self.scope:
+            raise_error("Usage of undeclared array {}".format(symbol), lineno)
+
+        if is_number(index):
+            el_symbol = '#'.join([symbol, str(index)])
+            if el_symbol not in self.scope:
+                raise_error("Array index out of scope".format(symbol), lineno)
+        elif is_int(index):
+            self.check_variable(index)
+        else:
+            raise CompilerError("Unexpected array index")
+
+    def check_int(self, variable):
+        _, symbol, lineno = variable
+        if '#'.join([symbol, '0']) in self.scope:
+            raise_error(
+                msg="Usage of array variable '{symbol}' without specifing index".format(symbol=symbol),
+                lineno=lineno
+            )
+        if symbol not in self.scope:
+            raise_error(
+                msg='Variable {symbol} not initialized'.format(symbol=symbol),
+                lineno=lineno
+            )
 
     def check_scope(self, operand):
         if is_number(operand):
@@ -147,21 +212,9 @@ class StaticAnalyzer:
                         raise_error("Trying to assign to array '{}' without specifing index".format(operand[1]))
                     raise_error("Undeclared array {}".format(operand[1]))
                 if name not in self.scope:
-                    import pdb; pdb.set_trace()
                     raise_error(
                         msg="Array index out of range {}".format(operand[1])
                     )
-        elif is_operation(operand):
-            import pdb;
-            pdb.set_trace()
-        elif is_expression(operand):
-            if len(operand) == 4:
-                self.check_scope(operand[2])
-                self.check_scope(operand[3])
-            elif len(operand) == 2:
-                self.check_scope(operand[1])
-            else:
-                raise CompilerError("Unexpected operand")
-
         else:
             raise CompilerError("Unexpected operand")
+
