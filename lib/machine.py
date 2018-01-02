@@ -4,7 +4,6 @@ from collections import Counter
 from lib.error import CompilerError
 from lib.utils import is_int, is_number, is_operation, is_inttab, is_label, is_variable, symtab_sort
 
-import itertools
 
 class Reg:
     r0 = ('int', 0, 0)
@@ -17,6 +16,7 @@ class Reg:
     r7 = ('int', 7, 7)
     r8 = ('int', 8, 8)
     r9 = ('int', 9, 9)
+
 
 class Machine:
     slots = {
@@ -640,17 +640,15 @@ class Machine:
     def opt_cache_const_generation(self):
         joined = '\n'.join(self.code)
         num_gen_pattern = re.compile('ZERO\\n(INC\\n|SHL\\n)*')
-
         splited = [num_gen_pattern.match('ZERO\nINC\n' + s).group() for s in joined.split('ZERO\nINC\n') if s != '']
         # GENERATE
         # STORE X
         # ZERO (INC|SHL)*
-
         counted = {k: v for k, v in dict(Counter(splited)).items() if v > 1}
 
         for k, v in counted.items():
             addr = self.opt_cache_to_memory(k)
             splited_by_number = [s for s in joined.split(k) if s != '']
-            first_occ, sec_occ, *_ = splited_by_number
+            first_occ, sec_occ, *later_occ = splited_by_number
             cache_moment = splited_by_number[0] + 'STORE ' + addr + '\n' + splited_by_number[1]
             import pdb; pdb.set_trace()
