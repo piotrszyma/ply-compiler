@@ -1,12 +1,9 @@
 VAR
-    a b c
+    a b[10] c
 BEGIN
-    a := 10 / 3;
-    b := 10 % 3;
-    IF a <> 3 THEN WRITE 1; ENDIF
-    IF b <> 1 THEN WRITE 1; ENDIF
-    a := 1 / 3;
-    b := 1 % 3;
-    IF a <> 0 THEN WRITE 1; ENDIF
-    IF b <> 1 THEN WRITE 1; ENDIF
+    a := 20;
+    c := 0;
+    b[c] := a / 5;
+    b[c] := b[c] - 3;
+    WRITE b[c];
 END

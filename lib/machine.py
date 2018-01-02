@@ -259,7 +259,6 @@ class Machine:
 
     def operation_divmod(self, target, operands, division=True):
         [left, right] = operands
-
         # 0 -> r2
         code = """
                ZERO
@@ -267,7 +266,7 @@ class Machine:
         # x -> r0
         code += """
                GENERATE l_val
-               """ if is_number(right) else """
+               """ if is_number(left) else """
                LOAD left
                """
         code += """
@@ -280,6 +279,7 @@ class Machine:
                LOAD right
                """
         code += """
+               JZERO #END
                STORE r1
                STORE r3
                """
