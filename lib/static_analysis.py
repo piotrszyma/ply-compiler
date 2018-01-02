@@ -8,16 +8,21 @@ class StaticAnalyzer:
     __slots__ = {
         'scope',
         'symbols',
-        'initialized'
+        'initialized',
+        'iterators'
     }
 
     def __init__(self):
         self.symbols = set()
         self.scope = set()
         self.initialized = {}
+        self.iterators = set()
 
-    def add_to_scope(self, var):
+    def add_iterator(self, var):
+        self.iterators.add(var)
         self.symbols.add(var)
+        # symbol with # means counter for loop
+        self.symbols.add('#' + var)
         self.scope.add(var)
 
     def remove_from_scope(self, var):
@@ -48,24 +53,28 @@ class StaticAnalyzer:
                 seen.extend([val + '#' + str(i) for i in range(size)])
             else:
                 seen.append(val)
-        self.symbols = self.scope = {*seen}
+        self.symbols = set(seen)
+        self.scope = set(seen)
 
-    def check_commands(self, cmd):
-        for c in cmd:
+    def check_commands(self, cmds):
+        for c in cmds:
             getattr(self, 'check_{type}'.format(type=c[0]))(c)
-            # TODO: commands check
 
     def check_assign(self, cmd):
         _, target, expression = cmd
         self.check_scope(target)
-        self.check_expression(expression)
+
         if is_int(target):
-            _, symbol, _ = target
+            _, symbol, lineno = target
+            if symbol in self.iterators:
+                raise_error("Mutation of iterator {symbol}".format(symbol=symbol), lineno)
         elif is_inttab(target):
             _, symbol, index, _ = target
             symbol = '#'.join([symbol, str(index)])
         else:
             raise CompilerError("Unexpected target type")
+
+        self.check_expression(expression)
         self.initialized[symbol] = True
 
     def check_expression(self, cmd):
@@ -74,17 +83,17 @@ class StaticAnalyzer:
             [var] = expression
             if is_variable(var):
                 self.check_variable(var)
-                self.check_if_initialized(var)
+                self.check_initialized(var)
         elif len(expression) == 3:
             [_, l_var, r_var] = expression
             for var in [l_var, r_var]:
                 if is_variable(var):
                     self.check_variable(var)
-                    self.check_if_initialized(var)
+                    self.check_initialized(var)
         else:
             raise CompilerError("Unexpected expression")
 
-    def check_if_initialized(self, var):
+    def check_initialized(self, var):
         if is_int(var):
             _, symbol, lineno = var
             if not self.initialized.get(symbol, False):
@@ -100,54 +109,72 @@ class StaticAnalyzer:
     def check_write(self, cmd):
         _, operand = cmd
         if is_variable(operand):
-            self.check_scope(operand)
+            self.check_variable(operand)
+            self.check_initialized(operand)
 
     def check_read(self, cmd):
         _, operand = cmd
-        if is_variable(operand):
-            self.check_scope(operand)
+        self.check_variable(operand)
 
     def check_if_then(self, cmd):
-        pass
+        _, condition, cmds = cmd
+        self.check_condition(condition)
+        self.check_commands(cmds)
 
     def check_if_else(self, cmd):
-        pass
+        _, condition, true_cmds, false_cmds = cmd
+        self.check_condition(condition)
+        for cmds in [true_cmds, false_cmds]:
+            self.check_commands(cmds)
 
     def check_while(self, cmd):
-        pass
+        _, condition, cmds = cmd
+        self.check_condition(condition)
+        self.check_commands(cmds)
+
+    def check_condition(self, condition):
+        *_, left_op, right_op = condition
+        for operand in [left_op, right_op]:
+            if is_variable(operand):
+                self.check_variable(operand)
+                self.check_initialized(operand)
 
     def check_for_up(self, cmd):
-        _, (_, iter_symbol, iter_lineno), start, end, cmds = cmd
-        # TODO: check if iterator is not array, number
-        if iter_symbol in self.symbols:
-            raise_error(
-                msg="trying to set previously declared variable '{0}' as iterator".format(iter_symbol),
-                lineno=iter_lineno
-            )
-            raise CompilerError()
-        self.add_to_scope(iter_symbol)
+        _, iterator, start, end, cmds = cmd
+
+        self.check_iterator(iterator)
+        _, iter_symbol, iter_lineno = iterator
+
+        self.add_iterator(iter_symbol)
+        self.initialized[iter_symbol] = True
+
         self.analyze(cmds)
+
+        self.initialized[iter_symbol] = False
         self.remove_from_scope(iter_symbol)
-        # symbol with # means counter for loop
-        self.add_to_symbols(iter_symbol)
-        self.add_to_symbols('#' + iter_symbol)
 
     def check_for_down(self, cmd):
-        # TODO: check if iterator is not array, number
-        _, (_, iter_symbol, iter_lineno), start, end, cmds = cmd
-        # TODO: check if iterator is not array, number
+        _, iterator, start, end, cmds = cmd
+
+        self.check_iterator(iterator)
+        _, iter_symbol, iter_lineno = iterator
+
+        self.add_iterator(iter_symbol)
+        self.initialized[iter_symbol] = True
+
+        self.analyze(cmds)
+
+        self.initialized[iter_symbol] = True
+        self.remove_from_scope(iter_symbol)
+
+    def check_iterator(self, iterator):
+        _, iter_symbol, iter_lineno = iterator
         if iter_symbol in self.symbols:
             raise_error(
                 msg="trying to set previously declared variable '{0}' as iterator".format(iter_symbol),
                 lineno=iter_lineno
             )
             raise CompilerError()
-        self.add_to_scope(iter_symbol)
-        self.analyze(cmds)
-        self.remove_from_scope(iter_symbol)
-        # with # means counter for this loop
-        self.add_to_symbols(iter_symbol)
-        self.add_to_symbols('#' + iter_symbol)
 
     def check_variable(self, variable):
         if is_int(variable):
@@ -155,7 +182,6 @@ class StaticAnalyzer:
         elif is_inttab(variable):
             self.check_inttab(variable)
         else:
-            import pdb; pdb.set_trace()
             raise CompilerError("Unexpected variable type")
 
     def check_inttab(self, variable):
@@ -217,4 +243,3 @@ class StaticAnalyzer:
                     )
         else:
             raise CompilerError("Unexpected operand")
-
