@@ -19,6 +19,8 @@ class CodeGenerator:
         for cmd in flow_graph:
             getattr(self, 'gen_' + cmd[0])(cmd)
 
+        self.machine.opt_cache_const_generation()
+
         self.machine.resolve_labels()
         self.machine.end()
         return '\n'.join(self.machine.code) + '\n'

@@ -1,7 +1,17 @@
 VAR
     a b
 BEGIN
-    FOR i FROM 100 DOWNTO 10 DO
-        WRITE i;
-    ENDFOR
+    a := 128;
+    WRITE a;
+    a := 128;
+    WRITE a;
+    a := 128;
+    WRITE a;
+    a := 128;
+    WRITE a;
+    a := 128;
+    WRITE a;
+    a := 128;
+    WRITE a;
+    a := 128;
 END
