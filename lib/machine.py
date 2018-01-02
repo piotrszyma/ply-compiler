@@ -139,17 +139,17 @@ class Machine:
         if is_number(x):
             # t := 1 + 1
             if is_number(y):
-                self.generate_number(x + y)
+                self.parse('GENERATE n', n=x + y)
             # t := 1 + a
             # t  := 1 + a[x]
             elif is_int(y) or is_inttab(y):
-                self.generate_number(x)
+                self.parse('GENERATE n', n=x)
                 self.parse('ADD y', y=y)
         elif is_int(x) or is_inttab(x):
             # t := a + 1
             if is_number(y):
                 x, y = y, x
-                self.generate_number(x)
+                self.parse('GENERATE n', n=x)
                 self.parse('ADD y', y=y)
             # t := a + b
             # t := a + b[x]
@@ -166,20 +166,19 @@ class Machine:
         if is_number(x):
             # t := 1 - 1
             if is_number(y):
-                self.generate_number(x - y)
+                self.parse('GENERATE n', n=x-y)
             # t := 1 - a
             # t := 1 - a[x]
             elif is_variable(y):
-                self.generate_number(x)
+                self.parse('GENERATE n', n=x)
                 self.parse('SUB a', a=y)
         elif is_variable(x):
             # t := a - 1
-            r0 = ('int', 0, 0)
             if is_number(y):
-                self.generate_number(y)
-                self.parse('STORE a', a=r0)
+                self.parse('GENERATE n', n=y)
+                self.parse('STORE a', a=Reg.r0)
                 self.parse('LOAD a', a=x)
-                self.parse('SUB a', a=r0)
+                self.parse('SUB a', a=Reg.r0)
             # t := a - b
             # t := a - b[x]
             elif is_variable(y):
@@ -645,50 +644,43 @@ class Machine:
             left += 'I'
             arr_addr = self.mem['{}#0'.format(var)]
             if left == 'LOADI':
-                self.generate_number(arr_addr)
                 code = """
+                GENERATE num
                 ADD x
                 STORE r9
                 LOADI r9
                 """
-                self.parse(code, x=index, r9=Reg.r9)
+                self.parse(code, num=arr_addr, x=index, r9=Reg.r9)
             elif left == 'STOREI':
                 code = """
                 STORE r9
-                """
-                code += self.generate_number(arr_addr, add=False)
-                code += """
+                GENERATE num
                 ADD x
                 STORE r8
                 LOAD r9
                 STOREI r8
                 """
-                self.parse(code, x=index, r9=Reg.r9, r8=Reg.r8)
+                self.parse(code, num=arr_addr, x=index, r9=Reg.r9, r8=Reg.r8)
             elif left == 'ADDI':
                 code = """
                 STORE r9
-                """
-                code += self.generate_number(arr_addr, add=False)
-                code += """
+                GENERATE num
                 ADD x
                 STORE r8
                 LOAD r9
                 ADDI r8
                 """
-                self.parse(code, x=index, r9=Reg.r1, r8=Reg.r8)
+                self.parse(code, num=arr_addr, x=index, r9=Reg.r1, r8=Reg.r8)
             elif left == 'SUBI':
-                # TODO: fix substraction for arrays!
                 code = """
                 STORE r9
-                """
-                code += self.generate_number(arr_addr, add=False)
-                code += """
+                GENERATE num
                 ADD x
                 STORE r8
                 LOAD r9
                 SUBI r8
                 """
-                self.parse(code, x=index, r9=Reg.r9, r8=Reg.r8)
+                self.parse(code, num=arr_addr, x=index, r9=Reg.r9, r8=Reg.r8)
 
     def parse_number(self, left, right):
         if left == 'SUB':
