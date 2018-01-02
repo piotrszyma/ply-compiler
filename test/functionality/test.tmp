@@ -1,9 +1,13 @@
 
 VAR
-    a[5] b c
+    a b
 BEGIN
-    FOR i FROM 1 TO 3 DO
-        a[i] := i;
-        WRITE i;
-    ENDFOR
+    a := 1;
+    b := 5;
+    WHILE a < b DO
+        a := a + 1;
+        IF a = b THEN
+            WRITE a;
+        ENDIF
+    ENDWHILE
 END

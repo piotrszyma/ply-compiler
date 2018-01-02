@@ -44,18 +44,6 @@ def is_label(a):
            and a[0] == 'label'
 
 
-def get_symbol(a):
-    if is_int(a):
-        return a[1]
-    elif is_inttab(a):
-        if is_number(a[2]):
-            return str(a[1]) + '#' + str(a[2])
-        else:
-            return a[1], a[2]
-    elif is_swap(a):
-        return a
-
-
 def raise_error(msg, lineno=None):
     error_msg = ""
     if lineno:

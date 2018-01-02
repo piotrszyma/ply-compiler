@@ -2,5 +2,11 @@ VAR
     a b c
 BEGIN
     a := 10 / 3;
-    WRITE a;
+    b := 10 % 3;
+    IF a <> 3 THEN WRITE 1; ENDIF
+    IF b <> 1 THEN WRITE 1; ENDIF
+    a := 1 / 3;
+    b := 1 % 3;
+    IF a <> 0 THEN WRITE 1; ENDIF
+    IF b <> 1 THEN WRITE 1; ENDIF
 END

@@ -1,5 +1,5 @@
 from lib.error import CompilerError
-from lib.utils import is_int, is_number, is_operation, is_inttab, get_symbol, is_label, is_variable, symtab_sort
+from lib.utils import is_int, is_number, is_operation, is_inttab, is_label, is_variable, symtab_sort
 
 
 class Reg:
@@ -66,7 +66,6 @@ class Machine:
             if isinstance(c, tuple):
                 resolved[i] = '{} {}'.format(c[0], labels[c[1]])
         self.code = resolved
-        print(str(self.mem))
 
     def generate_number(self, number, add=True):
         # code = []
@@ -253,172 +252,10 @@ class Machine:
                    target=target)
 
     def operation_divide(self, target, operands):
-        [left, right] = operands
-
-        # 0 -> r2
-        code = """
-        ZERO
-        STORE r2"""
-        # x -> r0
-        code += """
-        GENERATE l_val
-        """ if is_number(right) else """
-        LOAD left
-        """
-        code += """
-        STORE r0
-        """
-        # y -> r1, r3
-        code += """
-        GENERATE r_val
-        """ if is_number(right) else """
-        LOAD right
-        """
-        code += """
-        STORE r1
-        STORE r3
-        """
-
-        code += """
-        #SHIFT:
-        LOAD r1
-        SHL
-        STORE r1
-        LOAD r0
-        INC
-        SUB r1
-        JZERO #ADJUST
-        JUMP #SHIFT
-
-        #ADJUST:
-        LOAD r1
-        SHR
-        STORE r1
-        
-        #LOOP:
-        LOAD r3
-        SUB r1
-        JZERO #DIVISION
-        JUMP #END
-        
-        #DIVISION:
-        LOAD r1
-        SUB r0
-        JZERO #ADD
-        JUMP #NO_ADD
-        
-        #ADD:
-        LOAD r2
-        SHL
-        INC
-        STORE r2
-        LOAD r0
-        SUB r1
-        STORE r0
-        LOAD r1
-        SHR
-        STORE r1
-        JUMP #LOOP
-        
-        #NO_ADD:
-        LOAD r2
-        SHL
-        STORE r2
-        LOAD r1
-        SHR
-        STORE r1
-        JUMP #LOOP
-        
-        #END:
-        LOAD r2
-        STORE target
-        """
-
-        self.parse(code,
-                   l_val=left,
-                   r_val=right,
-                   left=left if is_variable(left) else Reg.r4,
-                   right=right if is_variable(right) else Reg.r5,
-                   target=target,
-                   r0=Reg.r0, r1=Reg.r1, r2=Reg.r2, r3=Reg.r3)
+        self.operation_divmod(target, operands)
 
     def operation_modulo(self, target, operands):
-        [left, right] = operands
-
-        if is_variable(right):
-            if is_variable(left):
-                r0, r1, r2, r3 = (('int', i, i) for i in range(4))
-                code = """
-                        ZERO
-                        STORE r2
-                        LOAD left
-                        STORE r0
-                        LOAD right
-                        JZERO #END
-                        STORE r1
-                        STORE r3
-            
-                        #SHIFT:
-                        LOAD r1
-                        SHL
-                        STORE r1
-                        LOAD r0
-                        INC
-                        SUB r1
-                        JZERO #ADJUST
-                        JUMP #SHIFT
-            
-                        #ADJUST:
-                        LOAD r1
-                        SHR
-                        STORE r1
-            
-                        #LOOP:
-                        LOAD r3
-                        SUB r1
-                        JZERO #DIVISION
-                        JUMP #END
-            
-                        #DIVISION:
-                        LOAD r1
-                        SUB r0
-                        JZERO #ADD
-                        JUMP #NO_ADD
-            
-                        #ADD:
-                        LOAD r2
-                        SHL
-                        INC
-                        STORE r2
-                        LOAD r0
-                        SUB r1
-                        STORE r0
-                        LOAD r1
-                        SHR
-                        STORE r1
-                        JUMP #LOOP
-            
-                        #NO_ADD:
-                        LOAD r2
-                        SHL
-                        STORE r2
-                        LOAD r1
-                        SHR
-                        STORE r1
-                        JUMP #LOOP
-            
-                        #END:
-                        LOAD r0
-                        STORE target
-                        """
-
-                self.parse(code,
-                           l_val=left,
-                           r_val=right,
-                           left=left if is_variable(left) else Reg.r8,
-                           right=right if is_variable(right) else Reg.r9,
-                           target=target,
-                           r0=Reg.r0, r1=Reg.r1, r2=Reg.r2, r3=Reg.r3)
+        self.operation_divmod(target, operands, division=False)
 
     def operation_divmod(self, target, operands, division=True):
         [left, right] = operands
@@ -500,11 +337,8 @@ class Machine:
                #END:
                """
         code += """
-               LOAD r2
-               STORE target""" if division else """
-               LOAD r0
-               STORE target
-               """
+               LOAD {target_reg}
+               STORE target""".format(target_reg='r2' if division else 'r0')
 
         self.parse(code,
                    l_val=left,
@@ -778,14 +612,12 @@ class Machine:
                 self.parse(code, num=arr_addr, x=index, r9=Reg.r9)
             elif left in ['STOREI', 'ADDI', 'SUBI']:
                 code = """
-                STORE r9
+                STORE r8
                 GENERATE num
                 ADD x
-                STORE r8
-                LOAD r9
-                """
-                code += """
-                {cmd} r8
+                STORE r9
+                LOAD r8
+                {cmd} r9
                 """.format(cmd=left)
                 self.parse(code, num=arr_addr, x=index, r9=Reg.r9, r8=Reg.r8)
             else:
