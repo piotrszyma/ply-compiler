@@ -56,6 +56,10 @@ class TestOperations(CompilerTestCase):
             MIX_SEC,
             '4\n4\n5\n9\n3\n3\n1\n1\n8\n8\n1\n1\n0\n0'
         )
+        self.assertOutputEquals(
+            OP_MIX,
+            '13\n7\n30\n3\n1'
+        )
 
 
 MIX_SEC = """
@@ -100,6 +104,19 @@ BEGIN
   WRITE u; (0)
 END
 """
+
+OP_MIX = """
+VAR
+    a b c
+BEGIN
+    a := 10;
+    b := 3;
+    c := a + b; WRITE c; (13)
+    c := a - b; WRITE c; (7)
+    c := a * b; WRITE c; (30)
+    c := a / b; WRITE c; (3)
+    c := a % b; WRITE c; (1)
+END"""
 
 NUM_MULT = """
 VAR

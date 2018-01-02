@@ -166,7 +166,7 @@ class Machine:
         if is_number(x):
             # t := 1 - 1
             if is_number(y):
-                self.parse('GENERATE n', n=x-y)
+                self.parse('GENERATE n', n=x - y)
             # t := 1 - a
             # t := 1 - a[x]
             elif is_variable(y):
@@ -190,128 +190,157 @@ class Machine:
 
     def operation_multiply(self, target, operands):
         [left, right] = operands
-        if is_variable(left):
-            if is_variable(right):
-                r0 = ('int', 0, 0)
-                r1 = ('int', 1, 0)
-                r2 = ('int', 2, 0)
-                code = """
-                ZERO
-                STORE r2
-                LOAD x
-                STORE r0
-                LOAD y
-                STORE r1
-    
-                #START:
-                
-                LOAD r1
-                JZERO #END
-                JODD #IS_ODD
-                JUMP #NOT_ODD
-                
-                #IS_ODD:
-                
-                LOAD r2
-                ADD r0
-                STORE r2
-                
-                #NOT_ODD:
-                
-                LOAD r1
-                SHR
-                STORE r1
-                LOAD r0
-                SHL
-                STORE r0
-                
-                JUMP #START
-                
-                #END:
-                LOAD r2
-                STORE z
-                """
 
-                self.parse(code,
-                           r0=r0,
-                           r1=r1,
-                           r2=r2,
-                           x=left,
-                           y=right,
-                           z=target)
+        code = ""
+
+        if is_number(left):
+            code += """
+                   GENERATE l_val
+                   STORE left
+                   """
+
+        if is_number(right):
+            code += """
+                   GENERATE r_val
+                   STORE right
+                   """
+
+        code += """
+            ZERO
+            STORE r2
+            LOAD left
+            STORE r0
+            LOAD right
+            STORE r1
+
+            #START:
+
+            LOAD r1
+            JZERO #END
+            JODD #IS_ODD
+            JUMP #NOT_ODD
+
+            #IS_ODD:
+
+            LOAD r2
+            ADD r0
+            STORE r2
+
+            #NOT_ODD:
+
+            LOAD r1
+            SHR
+            STORE r1
+            LOAD r0
+            SHL
+            STORE r0
+
+            JUMP #START
+
+            #END:
+            LOAD r2
+            STORE target
+            """
+
+        self.parse(code,
+                   l_val=left,
+                   r_val=right,
+                   r0=Reg.r0,
+                   r1=Reg.r1,
+                   r2=Reg.r2,
+                   left=left if is_variable(left) else Reg.r8,
+                   right=right if is_variable(right) else Reg.r9,
+                   target=target)
 
     def operation_divide(self, target, operands):
         [left, right] = operands
 
-        if is_variable(right):
-            if is_variable(left):
-                r0, r1, r2, r3 = (('int', i, i) for i in range(4))
-                code = """
-                        ZERO
-                        STORE r2
-                        LOAD x
-                        STORE r0
-                        LOAD y
-                        STORE r1
-                        STORE r3
+        # 0 -> r2
+        code = """
+        ZERO
+        STORE r2"""
+        # x -> r0
+        code += """
+        GENERATE l_val
+        """ if is_number(right) else """
+        LOAD left
+        """
+        code += """
+        STORE r0
+        """
+        # y -> r1, r3
+        code += """
+        GENERATE r_val
+        """ if is_number(right) else """
+        LOAD right
+        """
+        code += """
+        STORE r1
+        STORE r3
+        """
 
-                        #SHIFT:
-                        LOAD r1
-                        SHL
-                        STORE r1
-                        LOAD r0
-                        INC
-                        SUB r1
-                        JZERO #ADJUST
-                        JUMP #SHIFT
+        code += """
+        #SHIFT:
+        LOAD r1
+        SHL
+        STORE r1
+        LOAD r0
+        INC
+        SUB r1
+        JZERO #ADJUST
+        JUMP #SHIFT
 
-                        #ADJUST:
-                        LOAD r1
-                        SHR
-                        STORE r1
-                        
-                        #LOOP:
-                        LOAD r3
-                        SUB r1
-                        JZERO #DIVISION
-                        JUMP #END
-                        
-                        #DIVISION:
-                        LOAD r1
-                        SUB r0
-                        JZERO #ADD
-                        JUMP #NO_ADD
-                        
-                        #ADD:
-                        LOAD r2
-                        SHL
-                        INC
-                        STORE r2
-                        LOAD r0
-                        SUB r1
-                        STORE r0
-                        LOAD r1
-                        SHR
-                        STORE r1
-                        JUMP #LOOP
-                        
-                        #NO_ADD:
-                        LOAD r2
-                        SHL
-                        STORE r2
-                        LOAD r1
-                        SHR
-                        STORE r1
-                        JUMP #LOOP
-                        
-                        #END:
-                        LOAD r2
-                        STORE z
-                        """
-                self.parse(code,
-                           x=left,
-                           y=right,
-                           z=target, r0=r0, r1=r1, r2=r2, r3=r3)
+        #ADJUST:
+        LOAD r1
+        SHR
+        STORE r1
+        
+        #LOOP:
+        LOAD r3
+        SUB r1
+        JZERO #DIVISION
+        JUMP #END
+        
+        #DIVISION:
+        LOAD r1
+        SUB r0
+        JZERO #ADD
+        JUMP #NO_ADD
+        
+        #ADD:
+        LOAD r2
+        SHL
+        INC
+        STORE r2
+        LOAD r0
+        SUB r1
+        STORE r0
+        LOAD r1
+        SHR
+        STORE r1
+        JUMP #LOOP
+        
+        #NO_ADD:
+        LOAD r2
+        SHL
+        STORE r2
+        LOAD r1
+        SHR
+        STORE r1
+        JUMP #LOOP
+        
+        #END:
+        LOAD r2
+        STORE target
+        """
+
+        self.parse(code,
+                   l_val=left,
+                   r_val=right,
+                   left=left if is_variable(left) else Reg.r4,
+                   right=right if is_variable(right) else Reg.r5,
+                   target=target,
+                   r0=Reg.r0, r1=Reg.r1, r2=Reg.r2, r3=Reg.r3)
 
     def operation_modulo(self, target, operands):
         [left, right] = operands
@@ -322,12 +351,13 @@ class Machine:
                 code = """
                         ZERO
                         STORE r2
-                        LOAD x
+                        LOAD left
                         STORE r0
-                        LOAD y
+                        LOAD right
+                        JZERO #END
                         STORE r1
                         STORE r3
-
+            
                         #SHIFT:
                         LOAD r1
                         SHL
@@ -337,24 +367,24 @@ class Machine:
                         SUB r1
                         JZERO #ADJUST
                         JUMP #SHIFT
-
+            
                         #ADJUST:
                         LOAD r1
                         SHR
                         STORE r1
-
+            
                         #LOOP:
                         LOAD r3
                         SUB r1
                         JZERO #DIVISION
                         JUMP #END
-
+            
                         #DIVISION:
                         LOAD r1
                         SUB r0
                         JZERO #ADD
                         JUMP #NO_ADD
-
+            
                         #ADD:
                         LOAD r2
                         SHL
@@ -367,7 +397,7 @@ class Machine:
                         SHR
                         STORE r1
                         JUMP #LOOP
-
+            
                         #NO_ADD:
                         LOAD r2
                         SHL
@@ -376,15 +406,113 @@ class Machine:
                         SHR
                         STORE r1
                         JUMP #LOOP
-
+            
                         #END:
                         LOAD r0
-                        STORE z
+                        STORE target
                         """
+
                 self.parse(code,
-                           x=left,
-                           y=right,
-                           z=target, r0=r0, r1=r1, r2=r2, r3=r3)
+                           l_val=left,
+                           r_val=right,
+                           left=left if is_variable(left) else Reg.r8,
+                           right=right if is_variable(right) else Reg.r9,
+                           target=target,
+                           r0=Reg.r0, r1=Reg.r1, r2=Reg.r2, r3=Reg.r3)
+
+    def operation_divmod(self, target, operands, division=True):
+        [left, right] = operands
+
+        # 0 -> r2
+        code = """
+               ZERO
+               STORE r2"""
+        # x -> r0
+        code += """
+               GENERATE l_val
+               """ if is_number(right) else """
+               LOAD left
+               """
+        code += """
+               STORE r0
+               """
+        # y -> r1, r3
+        code += """
+               GENERATE r_val
+               """ if is_number(right) else """
+               LOAD right
+               """
+        code += """
+               STORE r1
+               STORE r3
+               """
+
+        code += """
+               #SHIFT:
+               LOAD r1
+               SHL
+               STORE r1
+               LOAD r0
+               INC
+               SUB r1
+               JZERO #ADJUST
+               JUMP #SHIFT
+
+               #ADJUST:
+               LOAD r1
+               SHR
+               STORE r1
+
+               #LOOP:
+               LOAD r3
+               SUB r1
+               JZERO #DIVISION
+               JUMP #END
+
+               #DIVISION:
+               LOAD r1
+               SUB r0
+               JZERO #ADD
+               JUMP #NO_ADD
+
+               #ADD:
+               LOAD r2
+               SHL
+               INC
+               STORE r2
+               LOAD r0
+               SUB r1
+               STORE r0
+               LOAD r1
+               SHR
+               STORE r1
+               JUMP #LOOP
+
+               #NO_ADD:
+               LOAD r2
+               SHL
+               STORE r2
+               LOAD r1
+               SHR
+               STORE r1
+               JUMP #LOOP
+
+               #END:
+               """
+        code += """
+               LOAD r2
+               STORE target""" if division else """
+               LOAD r0
+               STORE target
+               """
+
+        self.parse(code,
+                   l_val=left,
+                   r_val=right,
+                   left=left if is_variable(left) else Reg.r4,
+                   right=right if is_variable(right) else Reg.r5,
+                   target=target,
+                   r0=Reg.r0, r1=Reg.r1, r2=Reg.r2, r3=Reg.r3)
 
     def write(self, value):
         if is_variable(value):
@@ -585,7 +713,6 @@ class Machine:
         JZERO @label    <-    @ use existing label
         #LABEL:         <-    label placement (one only)
         """
-        # TODO: now I assume there are only variables, no numbers
         labels = {}
         for c in [c.strip() for c in code.split("\n") if c.strip() != '']:
             left, right = (c.split(" ") + [None])[:2]
@@ -609,8 +736,6 @@ class Machine:
                 variable = variables[right]
                 if is_inttab(variable):
                     self.parse_array(left, variable)
-                elif is_number(variable):
-                    self.parse_number(left, variable)
                 else:
                     resolved = variable[1]
                     self.code.extend(['{cmd} {param}'.format(
@@ -651,54 +776,20 @@ class Machine:
                 LOADI r9
                 """
                 self.parse(code, num=arr_addr, x=index, r9=Reg.r9)
-            elif left == 'STOREI':
+            elif left in ['STOREI', 'ADDI', 'SUBI']:
                 code = """
                 STORE r9
                 GENERATE num
                 ADD x
                 STORE r8
                 LOAD r9
-                STOREI r8
                 """
+                code += """
+                {cmd} r8
+                """.format(cmd=left)
                 self.parse(code, num=arr_addr, x=index, r9=Reg.r9, r8=Reg.r8)
-            elif left == 'ADDI':
-                code = """
-                STORE r9
-                GENERATE num
-                ADD x
-                STORE r8
-                LOAD r9
-                ADDI r8
-                """
-                self.parse(code, num=arr_addr, x=index, r9=Reg.r1, r8=Reg.r8)
-            elif left == 'SUBI':
-                code = """
-                STORE r9
-                GENERATE num
-                ADD x
-                STORE r8
-                LOAD r9
-                SUBI r8
-                """
-                self.parse(code, num=arr_addr, x=index, r9=Reg.r9, r8=Reg.r8)
-
-    def parse_number(self, left, right):
-        if left == 'SUB':
-            r0 = ('int', 0, 0)
-            r1 = ('int', 1, 1)
-            code = """
-            STORE r0
-            """
-            code += self.generate_number(right, add=False)
-            code += """
-            STORE r1
-            LOAD r0
-            SUB r1
-            """
-            self.parse(code, r0=Reg.r0, r1=r1)
-        else:
-            import pdb;
-            pdb.set_trace()
+            else:
+                raise CompilerError("Unexpected command")
 
     def end(self):
         self.parse('HALT')
