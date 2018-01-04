@@ -139,23 +139,24 @@ class Machine:
     def operation_add(self, target, operands):
         x, y = operands
         if is_number(x):
-            # t := 1 + 1
             if is_number(y):
-                self.parse('GENERATE n', n=x + y)
-            # t := 1 + a
-            # t  := 1 + a[x]
-            elif is_int(y) or is_inttab(y):
-                self.parse('GENERATE n', n=x)
-                self.parse('ADD y', y=y)
-        elif is_int(x) or is_inttab(x):
+                self.parse('GENERATE n', n=x+y)
+            else:
+                x, y = y, x
+
+        if is_int(x) or is_inttab(x):
             # t := a + 1
             if is_number(y):
-                x, y = y, x
-                self.parse('GENERATE n', n=x)
-                self.parse('ADD y', y=y)
+                if y <= 1:
+                    self.parse('LOAD x', x=x)
+                    for _ in range(y):
+                        self.parse('INC')
+                else:
+                    self.parse('GENERATE n', n=y)
+                    self.parse('ADD x', x=x)
             # t := a + b
             # t := a + b[x]
-            elif is_int(y) or is_inttab(y):
+            elif is_variable(y):
                 self.parse('LOAD x', x=x)
                 self.parse('ADD y', y=y)
             else:
@@ -177,10 +178,17 @@ class Machine:
         elif is_variable(x):
             # t := a - 1
             if is_number(y):
-                self.parse('GENERATE n', n=y)
-                self.parse('STORE a', a=Reg.r0)
-                self.parse('LOAD a', a=x)
-                self.parse('SUB a', a=Reg.r0)
+                # TODO: check what's faster
+                if y == 0:
+                    self.parse('LOAD a', a=x)
+                elif y == 1:
+                    self.parse('LOAD a', a=x)
+                    self.parse('DEC')
+                else:
+                    self.parse('GENERATE n', n=y)
+                    self.parse('STORE a', a=Reg.r0)
+                    self.parse('LOAD x', x=x)
+                    self.parse('SUB a', a=Reg.r0)
             # t := a - b
             # t := a - b[x]
             elif is_variable(y):
@@ -250,8 +258,8 @@ class Machine:
                    r0=Reg.r0,
                    r1=Reg.r1,
                    r2=Reg.r2,
-                   left=left if is_variable(left) else Reg.r8,
-                   right=right if is_variable(right) else Reg.r9,
+                   left=left if is_variable(left) else Reg.r4,
+                   right=right if is_variable(right) else Reg.r5,
                    target=target)
 
     def operation_divide(self, target, operands):
@@ -262,6 +270,7 @@ class Machine:
 
     def operation_divmod(self, target, operands, division=True):
         [left, right] = operands
+
         # 0 -> r2
         code = """
                ZERO
@@ -400,6 +409,17 @@ class Machine:
         if is_number(left) and is_number(right):
             if left != right:
                 return
+
+        if is_number(right):
+            right, left = left, right
+
+        if is_number(left) and left == 0:
+            code = """
+            LOAD a
+            JZERO @label
+            """
+            self.parse(code, a=right, label=label)
+            return
 
         if left == right:
             self.parse('JUMP @label', label=label)
@@ -629,26 +649,3 @@ class Machine:
     def end(self):
         self.parse('HALT')
 
-    def opt_cache_to_memory(self, value_str):
-        next_index = self.free_index
-        self.free_index = next_index + 1
-
-        self.mem[value_str] = self.free_index
-
-        return self.free_index
-
-    def opt_cache_const_generation(self):
-        joined = '\n'.join(self.code)
-        num_gen_pattern = re.compile('ZERO\\n(INC\\n|SHL\\n)*')
-        splited = [num_gen_pattern.match('ZERO\nINC\n' + s).group() for s in joined.split('ZERO\nINC\n') if s != '']
-        # GENERATE
-        # STORE X
-        # ZERO (INC|SHL)*
-        counted = {k: v for k, v in dict(Counter(splited)).items() if v > 1}
-
-        for k, v in counted.items():
-            addr = self.opt_cache_to_memory(k)
-            splited_by_number = [s for s in joined.split(k) if s != '']
-            first_occ, sec_occ, *later_occ = splited_by_number
-            cache_moment = splited_by_number[0] + 'STORE ' + addr + '\n' + splited_by_number[1]
-            import pdb; pdb.set_trace()

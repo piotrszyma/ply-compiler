@@ -58,7 +58,6 @@ class FlowGraph:
     def flow_for_up(self, cmd):
         _, iterator, start, end, body = cmd
         counter = (iterator[0], '#' + iterator[1], iterator[2])
-        # TODO: now we consider only variable-start & - end, later consider numbers and finish
         label_start, label_end = self.next_label(2)
 
         self.flow += self.add_goto_if((start, '>', end), label_end)
@@ -80,7 +79,6 @@ class FlowGraph:
     def flow_for_down(self, cmd):
         _, iterator, start, end, body = cmd
         counter = (iterator[0], '#' + iterator[1], iterator[2])
-        # TODO: now we consider only variable-start & - end, later consider numbers and finish
 
         label_start, label_end = self.next_label(2)
 

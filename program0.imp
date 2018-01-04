@@ -1,17 +1,85 @@
 VAR
-    a b
+    a b tablica[5] zero four six
 BEGIN
-    a := 128;
-    WRITE a;
-    a := 128;
-    WRITE a;
-    a := 128;
-    WRITE a;
-    a := 128;
-    WRITE a;
-    a := 128;
-    WRITE a;
-    a := 128;
-    WRITE a;
-    a := 128;
+    tablica[0] := 0;
+    tablica[1] := 1;
+    tablica[2] := 2;
+    tablica[3] := 3;
+    tablica[4] := 4;
+
+    ( zero := 0; )
+    four := 4;
+
+    FOR i FROM 4 DOWNTO 0 DO
+        WRITE tablica[i];
+    ENDFOR
+
+    FOR i FROM 4 DOWNTO zero DO
+        WRITE tablica[i];
+    ENDFOR
+
+    FOR i FROM four DOWNTO 0 DO
+        WRITE tablica[i];
+    ENDFOR
+
+    FOR i FROM tablica[4] DOWNTO tablica[0] DO
+        WRITE tablica[i];
+    ENDFOR
+
+    FOR i FROM tablica[4] DOWNTO 0 DO
+        WRITE tablica[i];
+    ENDFOR
+
+    FOR i FROM 4 DOWNTO tablica[0] DO
+        WRITE tablica[i];
+    ENDFOR
+
+    FOR i FROM tablica[four] DOWNTO zero DO
+        WRITE tablica[i];
+    ENDFOR
+
+    FOR i FROM tablica[four] DOWNTO tablica[zero] DO
+        WRITE tablica[i];
+    ENDFOR
+
+    FOR i FROM tablica[four] DOWNTO 0 DO
+        WRITE tablica[i];
+    ENDFOR
+
+    FOR i FROM tablica[four] DOWNTO tablica[0] DO
+        WRITE tablica[i];
+    ENDFOR
+
+    FOR i FROM 4 DOWNTO tablica[zero] DO
+        WRITE tablica[i];
+    ENDFOR
+
+    FOR i FROM four DOWNTO tablica[zero] DO
+        WRITE tablica[i];
+    ENDFOR
+
+    FOR i FROM tablica[4] DOWNTO tablica[zero] DO
+        WRITE tablica[i];
+    ENDFOR
+
+    FOR i FROM tablica[4] DOWNTO tablica[zero] DO
+        WRITE tablica[i];
+    ENDFOR
+
+    FOR i FROM four DOWNTO tablica[0] DO
+        WRITE tablica[i];
+    ENDFOR
+
+    FOR i FROM four DOWNTO tablica[0] DO
+        WRITE tablica[i];
+    ENDFOR
+
+    FOR i FROM tablica[4] DOWNTO zero DO
+        WRITE tablica[i];
+    ENDFOR
+
+    FOR i FROM four DOWNTO zero DO
+        WRITE tablica[i];
+    ENDFOR
+
 END

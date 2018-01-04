@@ -18,6 +18,11 @@ class TestWhileLoop(CompilerTestCase):
             '5'
         )
 
+        self.assertEqual(
+            self.compileAndRun(WHILE_TESTS),
+            ('4\n3\n2\n1\n0\n' * 18)[:-1]
+        )
+
 
 CLASSIC = """
 VAR
@@ -81,5 +86,94 @@ BEGIN
             WRITE a;
         ENDIF
     ENDWHILE
+END
+"""
+
+WHILE_TESTS = """
+VAR
+    a b tablica[5] zero four six
+BEGIN
+
+    zero := 0;
+    four := 4;
+    six  := 6;
+
+    tablica[0] := 0;
+    tablica[1] := 1;
+    tablica[2] := 2;
+    tablica[3] := 3;
+    tablica[4] := 4;
+
+    FOR i FROM 4 DOWNTO 0 DO
+        WRITE tablica[i];
+    ENDFOR
+
+    FOR i FROM 4 DOWNTO zero DO
+        WRITE tablica[i];
+    ENDFOR
+
+    FOR i FROM four DOWNTO 0 DO
+        WRITE tablica[i];
+    ENDFOR
+
+    FOR i FROM tablica[4] DOWNTO tablica[0] DO
+        WRITE tablica[i];
+    ENDFOR
+
+    FOR i FROM tablica[4] DOWNTO 0 DO
+        WRITE tablica[i];
+    ENDFOR
+
+    FOR i FROM 4 DOWNTO tablica[0] DO
+        WRITE tablica[i];
+    ENDFOR
+
+    FOR i FROM tablica[four] DOWNTO zero DO
+        WRITE tablica[i];
+    ENDFOR
+
+    FOR i FROM tablica[four] DOWNTO tablica[zero] DO
+        WRITE tablica[i];
+    ENDFOR
+
+    FOR i FROM tablica[four] DOWNTO 0 DO
+        WRITE tablica[i];
+    ENDFOR
+
+    FOR i FROM tablica[four] DOWNTO tablica[0] DO
+        WRITE tablica[i];
+    ENDFOR
+
+    FOR i FROM 4 DOWNTO tablica[zero] DO
+        WRITE tablica[i];
+    ENDFOR
+
+    FOR i FROM four DOWNTO tablica[zero] DO
+        WRITE tablica[i];
+    ENDFOR
+
+    FOR i FROM tablica[4] DOWNTO tablica[zero] DO
+        WRITE tablica[i];
+    ENDFOR
+
+    FOR i FROM tablica[4] DOWNTO tablica[zero] DO
+        WRITE tablica[i];
+    ENDFOR
+
+    FOR i FROM four DOWNTO tablica[0] DO
+        WRITE tablica[i];
+    ENDFOR
+
+    FOR i FROM four DOWNTO tablica[0] DO
+        WRITE tablica[i];
+    ENDFOR
+
+    FOR i FROM tablica[4] DOWNTO zero DO
+        WRITE tablica[i];
+    ENDFOR
+
+    FOR i FROM four DOWNTO zero DO
+        WRITE tablica[i];
+    ENDFOR
 END
 """

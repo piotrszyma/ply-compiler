@@ -99,12 +99,15 @@ class StaticAnalyzer:
             if not self.initialized.get(symbol, False):
                 raise_error("Usage of uninitialized variable '{symbol}'".format(symbol=symbol), lineno)
         elif is_inttab(var):
-            _, symbol, index, lineno = var
-            if not is_number(index):
-                return
-            symbol = '#'.join([symbol, str(index)])
-            if not self.initialized.get(symbol, False):
-                raise_error("Usage of uninitialized array element '{symbol}'".format(symbol=symbol), lineno)
+            pass
+            # TODO: check if it works?
+            # _, symbol, index, lineno = var
+            # if not is_number(index):
+            #     return
+            # symbol = '#'.join([symbol, str(index)])
+            # if not self.initialized.get(symbol, False):
+            #     import pdb; pdb.set_trace()
+            #     raise_error("Usage of uninitialized array element '{symbol}'".format(symbol=symbol), lineno)
 
     def check_write(self, cmd):
         _, operand = cmd
@@ -169,7 +172,7 @@ class StaticAnalyzer:
 
     def check_iterator(self, iterator):
         _, iter_symbol, iter_lineno = iterator
-        if iter_symbol in self.symbols:
+        if iter_symbol in self.scope:
             raise_error(
                 msg="trying to set previously declared variable '{0}' as iterator".format(iter_symbol),
                 lineno=iter_lineno

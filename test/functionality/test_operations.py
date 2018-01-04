@@ -51,6 +51,17 @@ class TestOperations(CompilerTestCase):
             '246'
         )
 
+        self.assertEqual(
+            self.compileAndRun(TEST_MUL),
+            '35\n10\n10\n49\n49\n49\n49\n49\n14\n28\n28\n8\n49\n14\n4'
+        )
+
+    def test_division_should_work(self):
+        self.assertOutputEquals(
+            self.compileAndRun(DIV_ONE),
+            "2\n1\n3\n2\n0\n2\n2\n1\n2\n1\n1\n2\n1\n3\n1\n0\n1\n3\n1\n0\n1\n1\n1\n1\n0\n3"
+        )
+
     def test_operations_should_work(self):
         self.assertOutputEquals(
             MIX_SEC,
@@ -61,6 +72,190 @@ class TestOperations(CompilerTestCase):
             '13\n7\n30\n3\n1'
         )
 
+        self.assertOutputEquals(
+            TEST_OP_MAX,
+            '19999999998\n0\n1\n7766279611452241921'
+        )
+
+    def test_modulo_should_work(self):
+        self.assertOutputEquals(
+            TEST_MOD,
+            '0\n2\n0\n1\n2\n0\n6\n0\n1\n0\n0\n1\n0\n2\n0\n4\n0\n1\n0\n2\n3\n0\n3\n0\n2\n0'
+        )
+
+
+TEST_OP_MAX = """
+VAR
+    a b c
+BEGIN
+
+   a := 9999999999;
+   b := 9999999999;
+   c := a+b;
+   WRITE c;
+   c := a-b;
+   WRITE c;
+   c := a/b;
+   WRITE c;
+   c := a*b;
+   WRITE c;
+
+END
+"""
+
+TEST_MUL = """
+VAR
+    a b array[5] result one zero
+BEGIN
+
+    a    := 2;
+    b    := 2;
+    one  := 1;
+    zero := 0;
+    array[0] := 4;
+    array[1] := 7;
+
+
+    result := 5 * 7;
+    WRITE result; (35)
+
+    result := 5 * a;
+    WRITE result;(10)
+
+    result := a * 5;
+    WRITE result; (10)
+
+    result := 7 * array[1];
+    WRITE result; (49)
+
+    result := array[1] * 7;
+    WRITE result; (49)
+
+    result := 7 * array[one];
+    WRITE result; (49)
+
+    result := array[one] * 7;
+    WRITE result; (49)
+
+    result := array[1] * array[1];
+    WRITE result; (49)
+
+    result := array[one] * b;
+    WRITE result; (14)
+
+    result := array[one] * array[zero];
+    WRITE result; (28)
+
+    result := array[one] * array[0];
+    WRITE result; (28)
+
+    result := a * array[zero];
+    WRITE result; (8)
+
+    result := array[1] * array[one];
+    WRITE result; (49)
+
+    result := a * array[1];
+    WRITE result; (14)
+
+    result := a * b;
+    WRITE result; (4)
+
+END
+"""
+
+TEST_MOD = """
+VAR
+    a b array[5] result one zero
+BEGIN
+
+    a    := 2;
+    b    := 7;
+    one  := 1;
+    zero := 0;
+    array[0] := 4;
+    array[1] := 7;
+
+
+    result := 6 % 3;
+    WRITE result; (0)
+
+    result := 6 % 4;
+    WRITE result; (2)
+
+    result := 6 % a;
+    WRITE result;(0)
+
+    result := 5 % a;
+    WRITE result; (1)
+
+    result := a % 5;
+    WRITE result; (2)
+
+    result := a % 1;
+    WRITE result; (0)
+
+    result := 20 % array[1];
+    WRITE result; (6)
+
+    result := 7 % array[1];
+    WRITE result; (0)
+
+    result := array[1] % 3;
+    WRITE result; (1)
+
+    result := array[1] % 7;
+    WRITE result; (0)
+
+    result := 7 % array[one];
+    WRITE result; (0)
+
+    result := 15 % array[one];
+    WRITE result; (1)
+
+    result := array[one] % 7;
+    WRITE result; (0)
+
+    result := array[one] % 5;
+    WRITE result; (2)
+
+    result := array[1] % array[1];
+    WRITE result; (0)
+
+    result := array[0] % array[1];
+    WRITE result; (4)
+
+    result := array[one] % b;
+    WRITE result; (0)
+
+    result := array[one] % a;
+    WRITE result; (1)
+
+    result := b % array[one];
+    WRITE result; (0)
+
+    result := a % array[one];
+    WRITE result; (2)
+
+    result := array[one] % array[zero];
+    WRITE result; (3)
+
+    result := array[one] % array[one];
+    WRITE result; (0)
+
+    result := array[one] % array[0];
+    WRITE result; (3)
+
+    result := array[1] % array[one];
+    WRITE result; (0)
+
+    result := a % b;
+    WRITE result; (2)
+
+    result := b % b;
+    WRITE result; (0)
+END
+"""
 
 MIX_SEC = """
 VAR
@@ -214,5 +409,99 @@ BEGIN
     a[2] := 3;
     a[1] := a[0] + a[2];
     WRITE a[1];
+END
+"""
+
+DIV_ONE = """
+VAR
+    a b array[5] result one zero
+BEGIN
+
+    a    := 2;
+    b    := 7;
+    one  := 1;
+    zero := 0;
+    array[0] := 4;
+    array[1] := 7;
+
+
+    result := 6 / 3;
+    WRITE result; (2)
+
+    result := 6 / 5;
+    WRITE result; (1)
+
+    result := 6 / a;
+    WRITE result;(3)
+
+    result := 5 / a;
+    WRITE result; (2)
+
+    result := a / 5;
+    WRITE result; (0)
+
+    result := a / 1;
+    WRITE result; (2)
+
+    result := 15 / array[1];
+    WRITE result; (2)
+
+    result := 7 / array[1];
+    WRITE result; (1)
+
+    result := array[1] / 3;
+    WRITE result; (2)
+
+    result := array[1] / 7;
+    WRITE result; (1)
+
+    result := 7 / array[one];
+    WRITE result; (1)
+
+    result := 15 / array[one];
+    WRITE result; (2)
+
+    result := array[one] / 7;
+    WRITE result; (1)
+
+    result := array[one] / 2;
+    WRITE result; (3)
+
+    result := array[1] / array[1];
+    WRITE result; (1)
+
+    result := array[0] / array[1];
+    WRITE result; (0)
+
+    result := array[one] / b;
+    WRITE result; (1)
+
+    result := array[one] / a;
+    WRITE result; (3)
+
+    result := b / array[one];
+    WRITE result; (1)
+
+    result := a / array[one];
+    WRITE result; (0)
+
+    result := array[one] / array[zero];
+    WRITE result; (1)
+
+    result := array[one] / array[0];
+    WRITE result; (1)
+
+    result := array[1] / array[one];
+    WRITE result; (1)
+
+    result := array[one] / array[zero];
+    WRITE result; (1)
+
+    result := a / b;
+    WRITE result; (0)
+
+    result := b / a;
+    WRITE result; (3)
+
 END
 """

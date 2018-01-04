@@ -2,12 +2,40 @@
 VAR
     a b
 BEGIN
-    a := 1;
-    b := 5;
-    WHILE a < b DO
-        a := a + 1;
-        IF a = b THEN
-            WRITE a;
+    a := 2;
+    b := 1;
+    IF a <> b THEN
+        IF a <> b THEN
+            IF a <> b THEN
+                IF a <> b THEN
+                    b := 7;
+                ENDIF
+            ENDIF
         ENDIF
-    ENDWHILE
+    ENDIF
+    WRITE b;
+        a := 2;
+    b := 1;
+    IF a <> b THEN
+        IF a <> b THEN
+            IF a <> b THEN
+                IF a <> b THEN
+                    b := 7;
+                ENDIF
+            ENDIF
+        ENDIF
+    ENDIF
+    WRITE b;
+    a := 2;
+    b := 1;
+    IF a <> b THEN
+        IF a <> b THEN
+            IF a <> b THEN
+                IF a <> b THEN
+                    b := 7;
+                ENDIF
+            ENDIF
+        ENDIF
+    ENDIF
+    WRITE b;
 END
