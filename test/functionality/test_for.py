@@ -19,6 +19,12 @@ class TestForLoop(CompilerTestCase):
             CLASSIC_FORDOWN,
             '3\n2\n1'
         )
+        self.assertOutputEquals(
+            CLASSIC_FORDOWN_OUT,
+            ''
+        )
+
+
 
 
 CLASSIC_FORUP = """
@@ -51,6 +57,18 @@ VAR
 BEGIN
     a := 3;
     b := 1;
+    FOR i FROM a DOWNTO b DO
+        WRITE i;
+    ENDFOR
+END
+"""
+
+CLASSIC_FORDOWN_OUT = """
+VAR
+    a b
+BEGIN
+    a := 3;
+    b := 4;
     FOR i FROM a DOWNTO b DO
         WRITE i;
     ENDFOR

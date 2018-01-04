@@ -60,9 +60,10 @@ class FlowGraph:
         counter = (iterator[0], '#' + iterator[1], iterator[2])
         label_start, label_end = self.next_label(2)
 
-        self.flow += self.add_goto_if((start, '>', end), label_end)
+        # self.flow += self.add_goto_if((start, '>', end), label_end)
 
         self.flow += ('assign', counter, ('expression', '-', end, start)),
+        self.flow += self.add_goto_if((counter, '=', 0), label_end)
         self.flow += ('assign', counter, ('expression', '+', counter, 1)),
         self.flow += ('assign', iterator, ('expression', start)),
 
@@ -82,9 +83,10 @@ class FlowGraph:
 
         label_start, label_end = self.next_label(2)
 
-        self.flow += self.add_goto_if((start, '<', end), label_end)
+        # self.flow += self.add_goto_if((start, '<', end), label_end)
 
         self.flow += ('assign', counter, ('expression', '-', start, end)),
+        self.flow += self.add_goto_if((counter, '=', 0), label_end)
         self.flow += ('assign', counter, ('expression', '+', counter, 1)),
         self.flow += ('assign', iterator, ('expression', start)),
 

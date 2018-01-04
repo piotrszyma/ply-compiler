@@ -1,4 +1,5 @@
 from lib.machine import Machine
+from lib.optimization import Optimization
 
 
 class CodeGenerator:
@@ -21,8 +22,13 @@ class CodeGenerator:
 
         # self.machine.opt_cache_const_generation()
 
+        opt = Optimization()
+
+        self.machine.code = opt.optimize(self.machine.code)
+
         self.machine.resolve_labels()
         self.machine.end()
+
         return '\n'.join(self.machine.code) + '\n'
 
     def gen_assign(self, cmd):
