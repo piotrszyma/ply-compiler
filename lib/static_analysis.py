@@ -116,8 +116,11 @@ class StaticAnalyzer:
             self.check_initialized(operand)
 
     def check_read(self, cmd):
+        # import pdb; pdb.set_trace()
         _, operand = cmd
         self.check_variable(operand)
+        _, symbol, *_ = operand
+        self.initialized[symbol] = True
 
     def check_if_then(self, cmd):
         _, condition, cmds = cmd
@@ -145,6 +148,11 @@ class StaticAnalyzer:
     def check_for_up(self, cmd):
         _, iterator, start, end, cmds = cmd
 
+        for el in [v for v in [start, end] if is_variable(v)]:
+            if is_variable(el):
+                self.check_variable(el)
+                self.check_initialized(el)
+
         self.check_iterator(iterator)
         _, iter_symbol, iter_lineno = iterator
 
@@ -157,18 +165,7 @@ class StaticAnalyzer:
         self.remove_from_scope(iter_symbol)
 
     def check_for_down(self, cmd):
-        _, iterator, start, end, cmds = cmd
-
-        self.check_iterator(iterator)
-        _, iter_symbol, iter_lineno = iterator
-
-        self.add_iterator(iter_symbol)
-        self.initialized[iter_symbol] = True
-
-        self.analyze(cmds)
-
-        self.initialized[iter_symbol] = True
-        self.remove_from_scope(iter_symbol)
+        self.check_for_up(cmd)
 
     def check_iterator(self, iterator):
         _, iter_symbol, iter_lineno = iterator

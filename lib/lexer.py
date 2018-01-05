@@ -100,7 +100,6 @@ class Lexer:
 
     def t_comment_CONTENT(self, t):
         r'.'
-        # print(t.value, end="")
         pass
 
     def t_comment_eof(self, t):
@@ -113,11 +112,11 @@ class Lexer:
 
     def t_ANY_newline(self, t):
         r'\n+'
-        # print("")
         t.lexer.lineno += len(t.value)
 
     def t_ANY_error(self, t):
         if t.value[0] == ')':
-            print(" In line {}: Are you trying to close unopened comment?".format(t.lexer.lineno))
+            error_msg = " In line {}: Are you trying to close unopened comment?".format(t.lexer.lineno)
         else:
-            print(" In line {}: Illegal character '{}'".format(t.lexer.lineno, t.value[0]))
+            error_msg = " In line {}: Illegal character '{}'".format(t.lexer.lineno, t.value[0])
+        raise CompilerError(error_msg)

@@ -22,8 +22,14 @@ def run_compiler(input_name, output_name):
     flow_generator = FlowGraph()
     code_generator = CodeGenerator()
 
-    with open(input_name, 'r') as f:
-        source_code = f.read()
+    source_code = ''
+
+    try:
+        with open(input_name, 'r') as f:
+            source_code = f.read()
+    except FileNotFoundError:
+        logging.error("File not found")
+        exit(1)
 
     try:
         # group tokens into syntactical units using parser

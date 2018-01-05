@@ -1,4 +1,5 @@
 import ply.yacc as yacc
+from ply.lex import LexError
 
 from lib.error import CompilerError
 from lib.lexer import Lexer
@@ -12,14 +13,15 @@ class Parser:
         self.tokens = self.lexer.tokens
         # TODO: debug=False & write_tables=False when ready
         self.parser = yacc.yacc(module=self,
-                                debug=True)
+                                debug=False)
 
     def parse(self, source_code):
-        return self.parser.parse(source_code,
-                                 lexer=self.lexer.lexer,
-                                 debug=False)
-
-    # program
+        if source_code:
+            return self.parser.parse(source_code,
+                                     lexer=self.lexer.lexer,
+                                     debug=False)
+        else:
+            raise CompilerError("Input file is empty")
 
     def p_program(self, p):
         'program : VAR vdeclarations BEGIN commands END'
