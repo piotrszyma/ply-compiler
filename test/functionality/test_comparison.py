@@ -57,6 +57,38 @@ class TestComparisons(CompilerTestCase):
             '2\n3'
         )
 
+        self.assertOutputEquals(
+            NEW_MIX,
+            ''
+        )
+
+
+NEW_MIX = """
+VAR 
+    a b
+BEGIN
+    IF 0 < 0 THEN WRITE 1; ENDIF
+    IF 1 < 0 THEN WRITE 1; ENDIF
+    IF 123 < 0 THEN WRITE 1; ENDIF
+       
+    IF 0 > 0 THEN WRITE 1; ENDIF
+    IF 110 > 111 THEN WRITE 1; ENDIF
+    
+    IF 0 >= 1 THEN WRITE 1; ENDIF
+    IF 0 >= 1123 THEN WRITE 1; ENDIF
+    IF 123 >= 1123 THEN WRITE 1; ENDIF
+    IF 1122 >= 1123 THEN WRITE 1; ENDIF
+    IF 1122 >= 1124 THEN WRITE 1; ENDIF
+    
+    IF 1125 <= 1124 THEN WRITE 1; ENDIF
+    IF 1 <= 0 THEN WRITE 1; ENDIF
+    IF 2 <= 0 THEN WRITE 1; ENDIF
+    
+    IF 2 = 0 THEN WRITE 1; ENDIF
+    IF 0 <> 0 THEN WRITE 1; ENDIF
+END
+
+"""
 
 ALTB = """
 VAR

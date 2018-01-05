@@ -1,6 +1,3 @@
-import re
-from collections import Counter
-
 from lib.error import CompilerError
 from lib.utils import is_int, is_number, is_operation, is_inttab, is_label, is_variable, symtab_sort
 
@@ -37,11 +34,22 @@ class Machine:
     def reserve_memory(self, symtab):
         for i in range(10):
             self.mem[i] = str(i)
+        mem_addr = 10
 
-        for index, symbol in enumerate(symtab_sort(symtab), 10):
-            self.mem[symbol] = index
+        for symbol in symtab_sort(symtab):
+            if symbol[0] != '#' and '#' in symbol:
+                symbol, size = symbol.split('#')
+                size = int(size)
+                self.mem[symbol + '#0'] = {
+                    'address': mem_addr,
+                    'size':    size
+                }
+                mem_addr += size
+            else:
+                self.mem[symbol] = mem_addr
+                mem_addr += 1
 
-        self.free_index = 10 + len(symtab)
+        self.free_index = mem_addr
 
     def set_labels(self, flow):
         for c in flow:
@@ -70,15 +78,7 @@ class Machine:
                 resolved[i] = '{} {}'.format(c[0], labels[c[1]])
         self.code = resolved
 
-    def generate_number(self, number, add=True):
-        # code = []
-
-        mem_addr = '#{}'.format(number)
-        # mem_val = self.mem.get(mem_addr, False)
-        #
-        # if mem_val:
-        #     code += ['LOAD {}'.format(mem_val)]
-        # else:
+    def generate_number(self, number):
         code = ['ZERO']
 
         if number != 0:
@@ -89,12 +89,6 @@ class Machine:
                 if d == '1':
                     code += ['INC']
 
-        # self.mem[mem_addr] = self.free_index
-        # code += ['STORE {}'.format(self.free_index)]
-        #
-        # self.free_index += 1
-        if add:
-            self.code += code
         return "\n".join(code)
 
     def assign(self, target, expression):
@@ -117,11 +111,11 @@ class Machine:
         self.parse(code, a=source, b=target)
 
     def assign_number(self, target, source):
-        self.generate_number(source)
         code = """
+        GENERATE n
         STORE b
         """
-        self.parse(code, b=target)
+        self.parse(code, n=source, b=target)
 
     def assign_operation(self, target, equation):
         sign, *operands = equation
@@ -140,7 +134,7 @@ class Machine:
         x, y = operands
         if is_number(x):
             if is_number(y):
-                self.parse('GENERATE n', n=x+y)
+                self.parse('GENERATE n', n=x + y)
             else:
                 x, y = y, x
 
@@ -373,7 +367,7 @@ class Machine:
         self.parse(code, a=source)
 
     def write_number(self, value):
-        self.generate_number(value)
+        self.parse('GENERATE n', n=value)
         self.parse('PUT')
 
     def read(self, target):
@@ -413,16 +407,16 @@ class Machine:
         if is_number(right):
             right, left = left, right
 
+        if left == right:
+            self.parse('JUMP @label', label=label)
+            return
+
         if is_number(left) and left == 0:
             code = """
             LOAD a
             JZERO @label
             """
             self.parse(code, a=right, label=label)
-            return
-
-        if left == right:
-            self.parse('JUMP @label', label=label)
             return
 
         if is_number(left):
@@ -459,6 +453,27 @@ class Machine:
 
     def comp_neq(self, cond, label):
         left, _, right = cond
+
+        if is_number(left) and is_number(right):
+            if left == right:
+                return
+            else:
+                self.parse('JUMP @label', label=label)
+                return
+
+        if is_number(right):
+            right, left = left, right
+
+        if not is_number(right) and is_number(left) and left == 0:
+            code = """
+            LOAD a
+            JZERO #FALSE
+            JUMP @label
+            #FALSE:
+            """
+            self.parse(code, a=right, label=label)
+            return
+
         code = ""
 
         if is_number(left):
@@ -528,6 +543,11 @@ class Machine:
 
     def comp_geq(self, cond, label):
         left, _, right = cond
+
+        if is_number(right) and right == 0:
+            self.parse("JUMP @label", label=label)
+            return
+
         code = ""
         if is_number(left):
             code += """
@@ -559,10 +579,12 @@ class Machine:
                    )
 
     def comp_lt(self, cond, label):
-        self.comp_gt((cond[2], '>', cond[0]), label)
+        left, _, right = cond
+        self.comp_gt((right, '>', left), label)
 
     def comp_leq(self, cond, label):
-        self.comp_geq((cond[2], '<=', cond[0]), label)
+        left, _, right = cond
+        self.comp_geq((right, '<=', left), label)
 
     def parse(self, code, **variables):
         """
@@ -575,7 +597,7 @@ class Machine:
             left, right = (c.split(" ") + [None])[:2]
             if left == 'GENERATE':
                 number = int(variables[right])
-                cmds = self.generate_number(number, False).split('\n')
+                cmds = self.generate_number(number).split('\n')
                 self.code.extend(cmds)
             elif not right and left[1:-1] not in labels.keys() and left[0] == '#':
                 # for new labels, generate unique labels names
@@ -617,14 +639,17 @@ class Machine:
     def parse_array(self, left, right):
         _, var, index, *_ = right
         if is_number(index):
-            addr = '{}#{}'.format(var, index)
+            array = self.mem['{}#0'.format(var)]
+            arr_addr = array['address']
+            cell_addr = index + arr_addr
             code = '{cmd} {param}'.format(
                 cmd=left,
-                param=self.mem[addr])
+                param=cell_addr)
             self.code.append(code)
         elif is_variable(index):
             left += 'I'
-            arr_addr = self.mem['{}#0'.format(var)]
+            array = self.mem['{}#0'.format(var)]
+            arr_addr = array['address']
             if left == 'LOADI':
                 code = """
                 GENERATE num
@@ -648,4 +673,3 @@ class Machine:
 
     def end(self):
         self.parse('HALT')
-

@@ -1,9 +1,18 @@
 class Optimization:
-    def optimize(self, cmds):
-        cmds = self.opt_remove_store_load(cmds)
-        return cmds
+    __slots__ = {
+        'cmds'
+    }
 
-    def opt_remove_store_load(self, cmds):
+    def __init__(self):
+        self.cmds = []
+
+    def optimize(self, cmds):
+        self.cmds = cmds
+        self.opt_remove_store_load()
+        self.opt_halt_if_no_write()
+        return self.cmds
+
+    def opt_remove_store_load(self):
         """
         STORE x
         LOAD x
@@ -12,6 +21,7 @@ class Optimization:
 
         STORE x
         """
+        cmds = self.cmds
 
         for index, cmd in enumerate(cmds[:-1]):
             u_i = index
@@ -24,6 +34,10 @@ class Optimization:
                 if u_cmd == 'STORE' and l_cmd == 'LOAD' and u_addr == l_addr:
                     cmds[l_i] = 'DELETE'
 
-        cmds = filter(lambda x: x != 'DELETE', cmds)
+        self.cmds = list(filter(lambda x: x != 'DELETE', cmds))
 
-        return cmds
+    def opt_halt_if_no_write(self):
+        reads = self.cmds.count('GET')
+        writes = self.cmds.count('PUT')
+        if writes == 0:
+            self.cmds = ['GET' * reads] if reads > 0 else [] + ['HALT']

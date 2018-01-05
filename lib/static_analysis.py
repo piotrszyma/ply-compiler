@@ -9,7 +9,8 @@ class StaticAnalyzer:
         'scope',
         'symbols',
         'initialized',
-        'iterators'
+        'iterators',
+        'arrays'
     }
 
     def __init__(self):
@@ -17,6 +18,7 @@ class StaticAnalyzer:
         self.scope = set()
         self.initialized = {}
         self.iterators = set()
+        self.arrays = {}
 
     def add_iterator(self, var):
         self.iterators.add(var)
@@ -38,10 +40,15 @@ class StaticAnalyzer:
         else:
             commands = parse_tree
         self.check_commands(commands)
-        return self.symbols, commands
+
+        parsed_symbols = [s[:-2] + '#' + str(self.arrays[s]) if s[-2:] == '#0' else s for s in self.symbols]
+
+        return parsed_symbols, commands
 
     def check_for_duplicate_declarations(self, declarations):
         seen = []
+        arrays = {}
+
         for kind, val, *details, lineno in declarations:
             if val in seen:
                 raise_error(
@@ -50,11 +57,18 @@ class StaticAnalyzer:
                 )
             if kind == 'int[]':
                 [size] = details
-                seen.extend([val + '#' + str(i) for i in range(size)])
+                seen.append(val + '#0')
+                if val in arrays.keys():
+                    raise_error(
+                        msg='double declaration of array {}'.format(val),
+                        lineno=lineno
+                    )
+                arrays[val + '#0'] = size
             else:
                 seen.append(val)
         self.symbols = set(seen)
         self.scope = set(seen)
+        self.arrays = arrays
 
     def check_commands(self, cmds):
         for c in cmds:
@@ -99,15 +113,8 @@ class StaticAnalyzer:
             if not self.initialized.get(symbol, False):
                 raise_error("Usage of uninitialized variable '{symbol}'".format(symbol=symbol), lineno)
         elif is_inttab(var):
+            # Cannot check int tab initialization
             pass
-            # TODO: check if it works?
-            # _, symbol, index, lineno = var
-            # if not is_number(index):
-            #     return
-            # symbol = '#'.join([symbol, str(index)])
-            # if not self.initialized.get(symbol, False):
-            #     import pdb; pdb.set_trace()
-            #     raise_error("Usage of uninitialized array element '{symbol}'".format(symbol=symbol), lineno)
 
     def check_write(self, cmd):
         _, operand = cmd
@@ -116,7 +123,6 @@ class StaticAnalyzer:
             self.check_initialized(operand)
 
     def check_read(self, cmd):
-        # import pdb; pdb.set_trace()
         _, operand = cmd
         self.check_variable(operand)
         _, symbol, *_ = operand
@@ -193,13 +199,16 @@ class StaticAnalyzer:
             raise_error("Usage of undeclared array {}".format(symbol), lineno)
 
         if is_number(index):
-            el_symbol = '#'.join([symbol, str(index)])
-            if el_symbol not in self.scope:
-                raise_error("Array index out of scope".format(symbol), lineno)
+            self.check_inttab_index(variable)
         elif is_int(index):
             self.check_variable(index)
         else:
             raise CompilerError("Unexpected array index")
+
+    def check_inttab_index(self, variable):
+        _, symbol, index, lineno = variable
+        if not 0 <= index <= self.arrays[symbol + '#0'] - 1:
+            raise_error("Array {} index out of range".format(symbol), lineno)
 
     def check_int(self, variable):
         _, symbol, lineno = variable
@@ -225,21 +234,6 @@ class StaticAnalyzer:
                 )
         elif is_inttab(operand):
             if is_number(operand[2]):
-                arr_start = '{arr_name}#{index}'.format(
-                    arr_name=operand[1],
-                    index=0
-                )
-                name = '{arr_name}#{index}'.format(
-                    arr_name=operand[1],
-                    index=operand[2]
-                )
-                if arr_start not in self.scope:
-                    if operand[1] in self.scope:
-                        raise_error("Trying to assign to array '{}' without specifing index".format(operand[1]))
-                    raise_error("Undeclared array {}".format(operand[1]))
-                if name not in self.scope:
-                    raise_error(
-                        msg="Array index out of range {}".format(operand[1])
-                    )
+                self.check_inttab_index(operand)
         else:
             raise CompilerError("Unexpected operand")
