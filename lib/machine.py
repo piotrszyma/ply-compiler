@@ -1,3 +1,5 @@
+from math import sqrt, floor
+
 from lib.error import CompilerError
 from lib.utils import is_int, is_number, is_operation, is_array, is_label, is_variable, symtab_sort
 
@@ -141,10 +143,11 @@ class Machine:
         if is_int(x) or is_array(x):
             # t := a + 1
             if is_number(y):
-                if y <= 1:
+                if y == 0:
                     self.parse('LOAD x', x=x)
-                    for _ in range(y):
-                        self.parse('INC')
+                elif y == 1:
+                    self.parse('LOAD x', x=x)
+                    self.parse('INC')
                 else:
                     self.parse('GENERATE n', n=y)
                     self.parse('ADD x', x=x)
@@ -194,6 +197,11 @@ class Machine:
 
     def operation_multiply(self, target, operands):
         [left, right] = operands
+
+        if is_number(left) and is_number(right):
+            self.parse('GENERATE n', n=left * right)
+            self.parse('STORE t', t=target)
+            return
 
         code = ""
 
@@ -265,6 +273,16 @@ class Machine:
     def operation_divmod(self, target, operands, division=True):
         [left, right] = operands
 
+        if is_number(left) and is_number(right):
+            if division:
+                self.parse('GENERATE n', n=0 if right == 0 else left // right)
+            else:
+                self.parse('GENERATE n', n=0 if right == 0 else left % right)
+            self.parse('STORE t', t=target)
+            return
+
+        # TODO: mul two times ?
+
         # 0 -> r2
         code = """
                ZERO
@@ -277,6 +295,7 @@ class Machine:
                """
         code += """
                STORE r0
+               JZERO #END_ZERO
                """
         # y -> r1, r3
         code += """
