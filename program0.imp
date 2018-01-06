@@ -1,10 +1,12 @@
 VAR
-    a b
+    a b[10] c
 BEGIN
-    a := 3;
-    b := 3;
-    WHILE a = b DO
-        b := b + 1;
-        WRITE b;
-    ENDWHILE
+    a := 1;
+    READ c;
+    WRITE c;
+    READ b[1];
+    WRITE b[1];
+    READ b[a];
+    WRITE b[9];
+    READ d;
 END

@@ -24,8 +24,26 @@ class TestForLoop(CompilerTestCase):
             ''
         )
 
+    def test_loop_params_immutability(self):
+        self.assertOutputEquals(
+            IMMUTABILITY,
+            '3\n5\n3\n4\n5\n3\n5\n5\n3'
+        )
 
 
+IMMUTABILITY = """
+VAR
+    a b
+BEGIN
+    a := 5;
+    b := 3;
+    FOR i FROM b TO a DO
+        WRITE i;
+        WRITE a;
+        WRITE b;
+    ENDFOR
+END
+"""
 
 CLASSIC_FORUP = """
 VAR

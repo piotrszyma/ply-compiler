@@ -146,7 +146,7 @@ class Parser:
     # error
 
     def p_error(self, p):
-        logging.error(" in line {lineno}: unknown input '{value}'".format(
+        logging.error(" in line {lineno}: unknown symbol '{value}'".format(
             lineno=p.lineno,
             value=p.value
         ))

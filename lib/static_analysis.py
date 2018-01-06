@@ -81,7 +81,7 @@ class StaticAnalyzer:
         if is_int(target):
             _, symbol, lineno = target
             if symbol in self.iterators:
-                raise_error("Mutation of iterator {symbol}".format(symbol=symbol), lineno)
+                raise_error("Mutation of iterator '{symbol}'".format(symbol=symbol), lineno)
         elif is_inttab(target):
             _, symbol, index, _ = target
             symbol = '#'.join([symbol, str(index)])
@@ -197,7 +197,6 @@ class StaticAnalyzer:
 
         if arr_start not in self.scope:
             raise_error("Usage of undeclared array {}".format(symbol), lineno)
-
         if is_number(index):
             self.check_inttab_index(variable)
         elif is_int(index):
@@ -219,7 +218,7 @@ class StaticAnalyzer:
             )
         if symbol not in self.scope:
             raise_error(
-                msg='Variable {symbol} not initialized'.format(symbol=symbol),
+                msg="Variable '{symbol}' not declared".format(symbol=symbol),
                 lineno=lineno
             )
 
@@ -234,6 +233,6 @@ class StaticAnalyzer:
                 )
         elif is_inttab(operand):
             if is_number(operand[2]):
-                self.check_inttab_index(operand)
+                self.check_inttab(operand)
         else:
             raise CompilerError("Unexpected operand")

@@ -285,7 +285,7 @@ class Machine:
                LOAD right
                """
         code += """
-               JZERO #END
+               JZERO #END_ZERO
                STORE r1
                STORE r3
                """
@@ -340,11 +340,16 @@ class Machine:
                STORE r1
                JUMP #LOOP
 
+               #END_ZERO:
+               LOAD r2
+               STORE target
+               JUMP #WAS_ZERO
+               
                #END:
-               """
-        code += """
                LOAD {target_reg}
-               STORE target""".format(target_reg='r2' if division else 'r0')
+               STORE target
+               #WAS_ZERO:
+               """.format(target_reg='r2' if division else 'r0')
 
         self.parse(code,
                    l_val=left,
