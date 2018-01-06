@@ -6,3 +6,5 @@ examples/
 .*
 *.out
 *.im
+a.out
+test.tmp

@@ -40,4 +40,4 @@ class Optimization:
         reads = self.cmds.count('GET')
         writes = self.cmds.count('PUT')
         if writes == 0:
-            self.cmds = ['GET' * reads] if reads > 0 else [] + ['HALT']
+            self.cmds = ['GET'] * reads if reads > 0 else [] + ['HALT']

@@ -1,12 +1,7 @@
 VAR
-    a b[10] c
+	a b[10]
 BEGIN
-    a := 1;
-    READ c;
-    WRITE c;
-    READ b[1];
-    WRITE b[1];
-    READ b[a];
-    WRITE b[9];
-    READ d;
+	a:=0;
+	b[0]:=5;
+	WRITE b[a];
 END
