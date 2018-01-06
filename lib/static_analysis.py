@@ -1,7 +1,7 @@
 import logging
 
 from lib.error import CompilerError
-from lib.utils import is_variable, raise_error, is_int, is_inttab, is_operation, is_expression, is_number
+from lib.utils import is_variable, raise_error, is_int, is_array, is_operation, is_expression, is_number
 
 
 class StaticAnalyzer:
@@ -82,7 +82,7 @@ class StaticAnalyzer:
             _, symbol, lineno = target
             if symbol in self.iterators:
                 raise_error("Mutation of iterator '{symbol}'".format(symbol=symbol), lineno)
-        elif is_inttab(target):
+        elif is_array(target):
             _, symbol, index, _ = target
             symbol = '#'.join([symbol, str(index)])
         else:
@@ -112,7 +112,7 @@ class StaticAnalyzer:
             _, symbol, lineno = var
             if not self.initialized.get(symbol, False):
                 raise_error("Usage of uninitialized variable '{symbol}'".format(symbol=symbol), lineno)
-        elif is_inttab(var):
+        elif is_array(var):
             # Cannot check int tab initialization
             pass
 
@@ -185,7 +185,7 @@ class StaticAnalyzer:
     def check_variable(self, variable):
         if is_int(variable):
             self.check_int(variable)
-        elif is_inttab(variable):
+        elif is_array(variable):
             self.check_inttab(variable)
         else:
             raise CompilerError("Unexpected variable type")
@@ -231,7 +231,7 @@ class StaticAnalyzer:
                     msg="Undeclared variable {}".format(operand[1]),
                     lineno=operand[2]
                 )
-        elif is_inttab(operand):
+        elif is_array(operand):
             if is_number(operand[2]):
                 self.check_inttab(operand)
         else:

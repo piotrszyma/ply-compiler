@@ -1,5 +1,5 @@
 from lib.error import CompilerError
-from lib.utils import is_int, is_number, is_operation, is_inttab, is_label, is_variable, symtab_sort
+from lib.utils import is_int, is_number, is_operation, is_array, is_label, is_variable, symtab_sort
 
 
 class Reg:
@@ -138,7 +138,7 @@ class Machine:
             else:
                 x, y = y, x
 
-        if is_int(x) or is_inttab(x):
+        if is_int(x) or is_array(x):
             # t := a + 1
             if is_number(y):
                 if y <= 1:
@@ -518,6 +518,24 @@ class Machine:
         left, _, right = cond
         code = ""
 
+        if is_number(left) and is_number(right):
+            if left > right:
+                self.parse('JUMP @label', label=label)
+                return
+
+        if is_number(left) and left == 0:
+            return
+
+        if is_number(right):
+            if right == 0:
+                code = """
+                JZERO #FALSE
+                JUMP @label
+                #FALSE:
+                """
+                self.parse(code, label=label)
+                return
+
         if is_number(left):
             code += """
             GENERATE l_val
@@ -618,7 +636,7 @@ class Machine:
             elif right in variables.keys():
                 # replace name with address
                 variable = variables[right]
-                if is_inttab(variable):
+                if is_array(variable):
                     self.parse_array(left, variable)
                 else:
                     resolved = variable[1]

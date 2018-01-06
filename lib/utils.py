@@ -23,14 +23,14 @@ def is_expression(a):
            (len(a) == 2 or len(a) == 4)
 
 
-def is_inttab(a):
+def is_array(a):
     return isinstance(a, tuple) \
            and len(a) == 4 \
            and a[0] == 'int[]'
 
 
 def is_variable(a):
-    return is_int(a) or is_inttab(a)
+    return is_int(a) or is_array(a)
 
 
 def is_swap(a):

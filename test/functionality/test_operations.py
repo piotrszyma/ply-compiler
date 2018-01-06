@@ -56,6 +56,11 @@ class TestOperations(CompilerTestCase):
             '35\n10\n10\n49\n49\n49\n49\n49\n14\n28\n28\n8\n49\n14\n4'
         )
 
+        self.assertEqual(
+            self.compileAndRun(SHOULD_NOT_WRITE),
+            ''
+        )
+
     def test_division_should_work(self):
         self.assertOutputEquals(
             self.compileAndRun(DIV_ONE),
@@ -83,6 +88,136 @@ class TestOperations(CompilerTestCase):
             '0\n2\n0\n1\n2\n0\n6\n0\n1\n0\n0\n1\n0\n2\n0\n4\n0\n1\n0\n2\n3\n0\n3\n0\n2\n0'
         )
 
+    def test_div(self):
+        stmt = """
+        a := {first} / {second};
+        IF a <> {result} THEN WRITE 1; ENDIF
+        """
+        stmts = []
+
+        for first in range(0, 10):
+            for second in range(0, 10):
+                result = (first // second) if second != 0 else 0
+
+                stmts.append(stmt.format(first=first, second=second, result=result))
+
+        body = "\n".join(stmts)
+
+        code = """
+        VAR
+            a b c d
+        BEGIN
+            {body}
+        END
+        """.format(body=body)
+        self.assertOutputEquals(
+            code,
+            ''
+        )
+
+    def test_mod(self):
+        stmt = """
+        a := {first} % {second};
+        IF a <> {result} THEN WRITE 1; ENDIF
+        """
+        stmts = []
+
+        for first in range(100, 110):
+            for second in range(0, 10):
+                result = (first % second) if second != 0 else 0
+                stmts.append(stmt.format(first=first, second=second, result=result))
+
+        body = "\n".join(stmts)
+
+        code = """
+        VAR
+            a b c d
+        BEGIN
+            {body}
+        END
+        """.format(body=body)
+        self.assertOutputEquals(
+            code,
+            ''
+        )
+
+    def test_add(self):
+        stmt = """
+        a := {first} + {second};
+        IF a <> {result} THEN WRITE 1; ENDIF
+        """
+        stmts = []
+
+        for first in range(100, 110):
+            for second in range(0, 10):
+                result = first + second
+                stmts.append(stmt.format(first=first, second=second, result=result))
+
+        body = "\n".join(stmts)
+
+        code = """
+        VAR
+            a b c d
+        BEGIN
+            {body}
+        END
+        """.format(body=body)
+        self.assertOutputEquals(
+            code,
+            ''
+        )
+
+    def test_sub(self):
+        stmt = """
+        a := {first} - {second};
+        IF a <> {result} THEN WRITE 1; ENDIF
+        """
+        stmts = []
+
+        for first in range(100, 110):
+            for second in range(0, 10):
+                result = first - second
+                stmts.append(stmt.format(first=first, second=second, result=result))
+
+        body = "\n".join(stmts)
+
+        code = """
+        VAR
+            a b c d
+        BEGIN
+            {body}
+        END
+        """.format(body=body)
+        self.assertOutputEquals(
+            code,
+            ''
+        )
+
+
+SHOULD_NOT_WRITE = """
+VAR
+    a b c
+BEGIN
+    a := 10 * 10;
+
+    IF a <> 100 THEN
+        WRITE 1;
+    ENDIF
+
+    a := 10 * 0;
+
+    IF a <> 0 THEN
+        WRITE 1;
+    ENDIF
+
+    a := 10 * 11;
+
+    IF a <> 110 THEN
+        WRITE 1;
+    ENDIF
+
+END
+"""
 
 TEST_OP_MAX = """
 VAR
