@@ -166,7 +166,10 @@ class Machine:
         if is_number(x):
             # t := 1 - 1
             if is_number(y):
-                self.parse('GENERATE n', n=x - y)
+                if x - y > 0:
+                    self.parse('GENERATE n', n=x-y)
+                else:
+                    self.parse('ZERO')
             # t := 1 - a
             # t := 1 - a[x]
             elif is_variable(y):
@@ -175,7 +178,6 @@ class Machine:
         elif is_variable(x):
             # t := a - 1
             if is_number(y):
-                # TODO: check what's faster
                 if y == 0:
                     self.parse('LOAD a', a=x)
                 elif y == 1:

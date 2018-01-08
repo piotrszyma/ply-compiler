@@ -1,3 +1,5 @@
+import pytest
+
 from test.compiler_test_case import CompilerTestCase
 
 
@@ -61,6 +63,153 @@ class TestComparisons(CompilerTestCase):
             NEW_MIX,
             ''
         )
+
+    def test_comparisons(self):
+        program = """
+        VAR
+            a b c d e f
+        BEGIN
+            {code}
+        END
+        """
+        stmts = []
+        expected = []
+        for left in range(0, 20):
+            for right in range(0, 20):
+                for operator in ['=', '<>', '>=', '>', '<=', '<']:
+                    stmt = "a := {left}; b := {right}; IF a {operator} b THEN WRITE 1; ENDIF".format(left=left,
+                                                                                                     right=right,
+                                                                                                     operator=operator)
+                    if self.eval_cond(operator, left, right):
+                        expected.append('1')
+                    stmts.append(stmt)
+
+        code = program.format(code='\n'.join(stmts))
+        expected = '\n'.join(expected)
+        # with open('comparisons_input.txt', 'w') as f:
+        #     f.write(code)
+        #
+        # with open('comparisons_output.txt', 'w') as f:
+        #     f.write(expected)
+
+        self.assertOutputEquals(
+            code,
+            expected
+        )
+
+    @pytest.mark.skip
+    def test_comparisons_arrays(self):
+        program = """
+        VAR
+            a[10] b[10] c d e f
+        BEGIN
+            {code}
+        END
+        """
+        stmts = []
+        expected = []
+        for left in range(0, 20):
+            for right in range(0, 20):
+                for operator in ['=', '<>', '>=', '>', '<=', '<']:
+                    stmt = "a[0] := {left}; b[0] := {right}; IF a[0] {operator} b[0] THEN WRITE 1; ENDIF".format(
+                        left=left,
+                        right=right,
+                        operator=operator)
+                    if self.eval_cond(operator, left, right):
+                        expected.append('1')
+                    stmts.append(stmt)
+
+        code = program.format(code='\n'.join(stmts))
+        expected = '\n'.join(expected)
+        self.assertOutputEquals(
+            code,
+            expected
+        )
+
+    @pytest.mark.skip
+    def test_comparisons_arrays_variable_index(self):
+        program = """
+        VAR
+            a[10] b[10] c d e f
+        BEGIN
+            {code}
+        END
+        """
+        stmts = []
+        expected = []
+        for left in range(0, 20):
+            for right in range(0, 20):
+                for operator in ['=', '<>', '>=', '>', '<=', '<']:
+                    stmt = "c := 0; d := 0; a[0] := {left}; b[0] := {right}; IF a[c] {operator} b[d] THEN WRITE 1; " \
+                           "ENDIF".format(
+                        left=left,
+                        right=right,
+                        operator=operator)
+                    if self.eval_cond(operator, left, right):
+                        expected.append('1')
+                    stmts.append(stmt)
+
+        code = program.format(code='\n'.join(stmts))
+        expected = '\n'.join(expected)
+        # with open('comparisons_input.txt', 'w') as f:
+        #     f.write(code)
+        #
+        # with open('comparisons_output.txt', 'w') as f:
+        #     f.write(expected)
+
+        self.assertOutputEquals(
+            code,
+            expected
+        )
+
+    @pytest.mark.skip
+    def test_comparisons_arrays_variable_index_if_else(self):
+        program = """
+        VAR
+            a[10] b[10] c d e f
+        BEGIN
+            {code}
+        END
+        """
+        stmts = []
+        expected = []
+        for left in range(0, 20):
+            for right in range(0, 20):
+                for operator in ['=', '<>', '>=', '>', '<=', '<']:
+                    stmt = "c := 0; d := 0; a[0] := {left}; b[0] := {right}; IF a[c] {operator} b[d] THEN WRITE 1;" \
+                           "ELSE WRITE 0; ENDIF ".format(
+                        left=left,
+                        right=right,
+                        operator=operator)
+                    if self.eval_cond(operator, left, right):
+                        expected.append('1')
+                    else:
+                        expected.append('0')
+                    stmts.append(stmt)
+
+        code = program.format(code='\n'.join(stmts))
+        expected = '\n'.join(expected)
+        with open('comparisons_input.txt', 'w') as f:
+            f.write(code)
+
+        with open('comparisons_output.txt', 'w') as f:
+            f.write(expected)
+
+        self.assertOutputEquals(
+            code,
+            expected
+        )
+
+    def eval_cond(self, cond_sym, left, right):
+        cond_map = {
+            '=':  lambda: left == right,
+            '<>': lambda: left != right,
+            '>=': lambda: left >= right,
+            '>':  lambda: left > right,
+            '<=': lambda: left <= right,
+            '<':  lambda: left < right
+        }
+        return cond_map[cond_sym]()
 
 
 NEW_MIX = """
