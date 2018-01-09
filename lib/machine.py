@@ -1,20 +1,23 @@
-from math import sqrt, floor
+from math import sqrt, log
 
 from lib.error import CompilerError
-from lib.utils import is_int, is_number, is_operation, is_array, is_label, is_variable, symtab_sort
+from lib.utils import is_int, is_number, is_operation, is_array, is_label, is_variable, symtab_sort, is_reg
 
 
 class Reg:
-    r0 = ('int', 0, 0)
-    r1 = ('int', 1, 1)
-    r2 = ('int', 2, 2)
-    r3 = ('int', 3, 3)
-    r4 = ('int', 4, 4)
-    r5 = ('int', 5, 5)
-    r6 = ('int', 6, 6)
-    r7 = ('int', 7, 7)
-    r8 = ('int', 8, 8)
-    r9 = ('int', 9, 9)
+    r0 = ('reg', 0, 0)
+    r1 = ('reg', 1, 1)
+    r2 = ('reg', 2, 2)
+    r3 = ('reg', 3, 3)
+    r4 = ('reg', 4, 4)
+    r5 = ('reg', 5, 5)
+    r6 = ('reg', 6, 6)
+    r7 = ('reg', 7, 7)
+    r8 = ('reg', 8, 8)
+    r9 = ('reg', 9, 9)
+    r10 = ('reg', 10, 10)
+    r11 = ('reg', 11, 11)
+    r12 = ('reg', 12, 12)
 
 
 class Machine:
@@ -32,18 +35,18 @@ class Machine:
         self.free_index = 0
 
     def reserve_memory(self, symtab):
-        for i in range(10):
+        for i in range(13):
             self.mem[i] = str(i)
-        mem_addr = 10
+        mem_addr = 13
 
         for symbol in symtab_sort(symtab):
             if symbol[0] != '#' and '#' in symbol:
                 symbol, size = symbol.split('#')
                 size = int(size)
                 self.mem[symbol + '#0'] = {
-                    'address':   mem_addr + 1,  # at the beginning store value of start address
-                    'size':      size,
-                    'start_addr': mem_addr
+                    'address':    mem_addr + 1,  # at the beginning store value of start address
+                    'size':       size,
+                    'start_ptr': mem_addr
                 }
                 mem_addr += size + 1
             else:
@@ -55,7 +58,7 @@ class Machine:
         for symbol, details in self.mem.items():
             if isinstance(symbol, str) and symbol[-2:] == '#0':
                 self.parse("GENERATE address", address=details['address'])
-                self.code.append("STORE {}".format(details['start_addr']))
+                self.code.append("STORE {}".format(details['start_ptr']))
 
     def set_labels(self, flow):
         for c in flow:
@@ -110,6 +113,26 @@ class Machine:
                 raise CompilerError("Unknown value type")
 
     def assign_variable(self, target, source):
+        if is_array(source):
+            _, symbol, index, lineno = source
+            if is_int(index):
+                self.code.append('LOAD {}'.format(self.mem[symbol + '#0']['start_ptr']))
+                self.parse("""
+                ADD index
+                STORE r10
+                """, index=index, r10=Reg.r10)
+                source = ('int[]', symbol, Reg.r10, lineno)
+
+        if is_array(target):
+            _, symbol, index, lineno = target
+            if is_int(index):
+                self.code.append('LOAD {}'.format(self.mem[symbol + '#0']['start_ptr']))
+                self.parse("""
+                ADD index
+                STORE r11
+                """, index=index, r11=Reg.r11)
+                target = ('int[]', symbol, Reg.r11, lineno)
+
         code = """
         LOAD a
         STORE b
@@ -117,6 +140,16 @@ class Machine:
         self.parse(code, a=source, b=target)
 
     def assign_number(self, target, source):
+        if is_array(target):
+            _, symbol, index, _ = target
+            if is_variable(index):
+                self.code.append('LOAD {}'.format(self.mem[symbol + '#0']['start_ptr']))
+                self.parse('ADD i', i=index)
+                self.parse('STORE r1', r1=Reg.r1)
+                self.parse('GENERATE n', n=source)
+                self.parse('STOREI r1', r1=Reg.r1)
+                return
+
         code = """
         GENERATE n
         STORE b
@@ -125,6 +158,37 @@ class Machine:
 
     def assign_operation(self, target, equation):
         sign, *operands = equation
+
+        [left, right] = operands
+        if is_array(left):
+            _, symbol, index, lineno = left
+            if is_int(index):
+                self.code.append('LOAD {}'.format(self.mem[symbol + '#0']['start_ptr']))
+                self.parse("""
+                ADD index
+                STORE r10
+                """, index=index, r10=Reg.r10)
+                operands = [('int[]', symbol, Reg.r10, lineno), right]
+
+        if is_array(right):
+            _, symbol, index, lineno = right
+            if is_int(index):
+                self.code.append('LOAD {}'.format(self.mem[symbol + '#0']['start_ptr']))
+                self.parse("""
+                ADD index
+                STORE r11
+                """, index=index, r11=Reg.r11)
+                operands = [left, ('int[]', symbol, Reg.r11, lineno)]
+
+        if is_array(target):
+            _, symbol, index, lineno = target
+            if is_int(index):
+                self.code.append('LOAD {}'.format(self.mem[symbol + '#0']['start_ptr']))
+                self.parse("""
+                ADD index
+                STORE r12
+                """, index=index, r12=Reg.r12)
+                target = ('int[]', symbol, Reg.r12, lineno)
 
         operations = {
             '+': self.operation_add,
@@ -145,6 +209,8 @@ class Machine:
         if is_number(x):
             if is_number(y):
                 self.parse('GENERATE n', n=x + y)
+                self.parse('STORE t', t=target)
+                return
             else:
                 x, y = y, x
 
@@ -217,7 +283,7 @@ class Machine:
             return
 
         if is_number(left):
-            if left % 2 == 0 and float(int(sqrt(left))) == sqrt(left):
+            if left % 2 == 0 and float(int(log(left, 2))) == log(left, 2):
                 count = int(sqrt(left))
                 code = """
                 LOAD right
@@ -237,6 +303,8 @@ class Machine:
                 STORE target
                 """
                 self.parse(code, right=right, target=target)
+                return
+            elif target == right and left == 1:
                 return
 
         code = ""
@@ -432,6 +500,16 @@ class Machine:
             self.write_number(value)
 
     def write_variable(self, source):
+        if is_array(source):
+            _, symbol, index, lineno = source
+            if is_int(index):
+                self.code.append('LOAD {}'.format(self.mem[symbol + '#0']['start_ptr']))
+                self.parse("""
+                ADD index
+                STORE r10
+                """, index=index, r10=Reg.r10)
+                source = ('int[]', symbol, Reg.r10, lineno)
+
         code = """
         LOAD a
         PUT"""
@@ -448,6 +526,15 @@ class Machine:
             raise CompilerError("Cannot READ non-variable")
 
     def read_variable(self, target):
+        if is_array(target):
+            _, symbol, index, lineno = target
+            if is_int(index):
+                self.code.append('LOAD {}'.format(self.mem[symbol + '#0']['start_ptr']))
+                self.parse("""
+                       ADD index
+                       STORE r10
+                       """, index=index, r10=Reg.r10)
+                target = ('int[]', symbol, Reg.r10, lineno)
         code = """
         GET
         STORE a
@@ -486,6 +573,17 @@ class Machine:
             code = """
             LOAD a
             JZERO @label
+            """
+            self.parse(code, a=right, label=label)
+            return
+
+        if is_number(left) and left == 1:
+            code = """
+            LOAD a
+            JZERO #FALSE
+            DEC
+            JZERO @label
+            #FALSE:
             """
             self.parse(code, a=right, label=label)
             return
@@ -535,9 +633,21 @@ class Machine:
         if is_number(right):
             right, left = left, right
 
-        if not is_number(right) and is_number(left) and left == 0:
+        if is_number(left) and left == 0:
             code = """
             LOAD a
+            JZERO #FALSE
+            JUMP @label
+            #FALSE:
+            """
+            self.parse(code, a=right, label=label)
+            return
+
+        if is_number(left) and left == 1:
+            code = """
+            LOAD a
+            JZERO @label
+            DEC
             JZERO #FALSE
             JUMP @label
             #FALSE:
@@ -602,20 +712,20 @@ class Machine:
                 self.parse(code, label=label)
                 return
 
-        if is_number(left):
-            code += """
-            GENERATE l_val
-            STORE left
-            """
-
         if is_number(right):
             code += """
             GENERATE r_val
             STORE right
             """
-
+        if is_number(left):
+            code += """
+            GENERATE l_val
+            """
+        else:
+            code += """
+            LOAD left
+            """
         code += """
-        LOAD left
         SUB right
         JZERO #FALSE
         JUMP @label
@@ -638,20 +748,22 @@ class Machine:
             return
 
         code = ""
-        if is_number(left):
-            code += """
-            GENERATE l_val
-            STORE left
-            """
-
         if is_number(right):
             code += """
             GENERATE r_val
             STORE right
             """
 
+        if is_number(left):
+            code += """
+            GENERATE l_val
+            """
+        else:
+            code += """
+            LOAD left
+            """
+
         code += """
-        LOAD left
         INC
         SUB right
         JZERO #FALSE
@@ -735,12 +847,16 @@ class Machine:
                 cmd=left,
                 param=cell_addr)
             self.code.append(code)
+        elif is_reg(index):
+            self.code.append(
+                '{cmd}I {reg}'.format(cmd=left, reg=index[1])
+            )
         elif is_variable(index):
             left += 'I'
             array = self.mem['{}#0'.format(var)]
-            arr_start_addr = array['start_addr']
+            arr_start_ptr = array['start_ptr']
             if left == 'LOADI':
-                self.code.append('LOAD {arr_start_addr}'.format(arr_start_addr=arr_start_addr))
+                self.code.append('LOAD {arr_start_ptr}'.format(arr_start_ptr=arr_start_ptr))
                 code = """
                 ADD x
                 STORE r9
@@ -752,13 +868,13 @@ class Machine:
                 STORE r8
                 """, r8=Reg.r8)
 
-                self.code.append('LOAD {arr_start_addr}'.format(arr_start_addr=arr_start_addr))
+                self.code.append('LOAD {arr_start_ptr}'.format(arr_start_ptr=arr_start_ptr))
 
                 code = """ADD x
                 STORE r9
                 LOAD r8
                 {cmd} r9
-                """.format(cmd=left, arr_size=arr_start_addr)
+                """.format(cmd=left, arr_size=arr_start_ptr)
                 self.parse(code, x=index, r9=Reg.r9, r8=Reg.r8)
             else:
                 raise CompilerError("Unexpected command")

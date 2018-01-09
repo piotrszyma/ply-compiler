@@ -29,8 +29,28 @@ def is_array(a):
            and a[0] == 'int[]'
 
 
+def is_varindex_array(a):
+    return isinstance(a, tuple) \
+           and len(a) == 4 \
+           and a[0] == 'int[]' \
+           and is_int(a[2])
+
+
+def is_numindex_array(a):
+    return isinstance(a, tuple) \
+           and len(a) == 4 \
+           and a[0] == 'int[]' \
+           and is_number(a[2])
+
+
 def is_variable(a):
     return is_int(a) or is_array(a)
+
+
+def is_reg(a):
+    return isinstance(a, tuple) \
+           and len(a) == 3 \
+           and a[0] == 'reg'
 
 
 def is_swap(a):

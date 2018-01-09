@@ -59,7 +59,7 @@ class FlowGraph:
         self.flow += self.add_goto_if(self.neg(cond), label_false)
         self.generate(if_true)
         self.flow += self.add_goto(label_end)
-        self.flow += ('label', label_false),
+        self.flow += self.add_label(label_false)
         self.generate(if_false)
         self.flow += self.add_label(label_end)
 
