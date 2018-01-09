@@ -1,0 +1,1 @@
+for l in $(find ./test/error_examples -maxdepth 3 -not -type d); do echo $l && ./plyc.py $l && ./interpreter a.out; done

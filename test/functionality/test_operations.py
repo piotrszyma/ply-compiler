@@ -193,6 +193,62 @@ class TestOperations(CompilerTestCase):
             ''
         )
 
+        self.assertOutputEquals(
+            NEXT_MIX,
+            '10\n20\n30\n40\n50\n111111111\n2\n4\n6\n8\n10\n111111111\n100\n80\n60\n40\n20\n200\n160\n120\n80\n40'
+            '\n300\n240\n180\n120\n60\n400\n320\n240\n160\n80\n500\n400\n300\n200\n100'
+        )
+
+
+NEXT_MIX = """
+( tab2.imp - tablice )
+VAR
+	n m j z ta[5] tb[5] tc[25]
+BEGIN
+	n := 25 - 1;
+	m := 5 - 1;
+	z := 0;	
+
+	FOR i FROM z TO m DO
+		j := i + 1;
+          ta[i] := 9 * j;
+		tb[i] := 6 * j;
+		tb[i] := tb[i] / 3;
+		ta[i] := j + ta[i];
+     ENDFOR
+	
+     FOR i FROM z TO m DO
+		WRITE ta[i];
+	ENDFOR
+
+	WRITE 111111111;
+
+	FOR i FROM z TO m DO
+		WRITE tb[i];
+	ENDFOR
+
+	WRITE 111111111;
+
+	FOR i FROM z TO m DO
+		FOR k FROM m DOWNTO z DO
+			FOR l FROM z TO n DO
+				j := 5 * i;
+                    j := j + 4;
+                    j := j - k;
+				IF j = l THEN
+					tc[l] := ta[i] * tb[k];
+				ENDIF
+			ENDFOR
+		ENDFOR
+	ENDFOR
+
+	FOR i FROM z TO n DO
+		WRITE tc[i];
+	ENDFOR
+
+END
+
+"""
 
 SHOULD_NOT_WRITE = """
 VAR

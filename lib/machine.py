@@ -22,7 +22,6 @@ class Machine:
         'code',
         'mem',
         'labels',
-        'num_cache',
         'free_index'
     }
 
@@ -30,7 +29,6 @@ class Machine:
         self.labels = []
         self.code = []
         self.mem = {}
-        self.num_cache = {}
         self.free_index = 0
 
     def reserve_memory(self, symtab):
@@ -43,15 +41,21 @@ class Machine:
                 symbol, size = symbol.split('#')
                 size = int(size)
                 self.mem[symbol + '#0'] = {
-                    'address': mem_addr,
-                    'size':    size
+                    'address':   mem_addr + 1,  # at the beginning store value of start address
+                    'size':      size,
+                    'start_addr': mem_addr
                 }
-                mem_addr += size
+                mem_addr += size + 1
             else:
                 self.mem[symbol] = mem_addr
                 mem_addr += 1
 
         self.free_index = mem_addr
+
+        for symbol, details in self.mem.items():
+            if isinstance(symbol, str) and symbol[-2:] == '#0':
+                self.parse("GENERATE address", address=details['address'])
+                self.code.append("STORE {}".format(details['start_addr']))
 
     def set_labels(self, flow):
         for c in flow:
@@ -68,7 +72,6 @@ class Machine:
     def resolve_labels(self):
         resolved = []
         labels = {}
-
         for i, c in enumerate(self.code):
             if isinstance(c, tuple) and c[0] == 'label':
                 labels[c[1]] = len(resolved)
@@ -78,6 +81,7 @@ class Machine:
         for i, c in enumerate(resolved):
             if isinstance(c, tuple):
                 resolved[i] = '{} {}'.format(c[0], labels[c[1]])
+
         self.code = resolved
 
     def generate_number(self, number):
@@ -134,6 +138,10 @@ class Machine:
 
     def operation_add(self, target, operands):
         x, y = operands
+
+        if is_array(x) and is_array(y):
+            pass
+
         if is_number(x):
             if is_number(y):
                 self.parse('GENERATE n', n=x + y)
@@ -167,7 +175,7 @@ class Machine:
             # t := 1 - 1
             if is_number(y):
                 if x - y > 0:
-                    self.parse('GENERATE n', n=x-y)
+                    self.parse('GENERATE n', n=x - y)
                 else:
                     self.parse('ZERO')
             # t := 1 - a
@@ -200,10 +208,36 @@ class Machine:
     def operation_multiply(self, target, operands):
         [left, right] = operands
 
+        if is_number(right):
+            left, right = right, left
+
         if is_number(left) and is_number(right):
             self.parse('GENERATE n', n=left * right)
             self.parse('STORE t', t=target)
             return
+
+        if is_number(left):
+            if left % 2 == 0 and float(int(sqrt(left))) == sqrt(left):
+                count = int(sqrt(left))
+                code = """
+                LOAD right
+                """
+                for _ in range(count):
+                    code += """
+                    SHL
+                    """
+                code += """
+                STORE target
+                """
+                self.parse(code, right=right, target=target)
+                return
+            elif left == 1 and target != left:
+                code = """
+                LOAD right
+                STORE target
+                """
+                self.parse(code, right=right, target=target)
+                return
 
         code = ""
 
@@ -223,12 +257,23 @@ class Machine:
             ZERO
             STORE r2
             LOAD left
+            SUB right
+            JZERO #RIGHT_BIGGER
+
+            #LEFT_BIGGER:
+            LOAD left
             STORE r0
             LOAD right
             STORE r1
+            JUMP #START
+
+            #RIGHT_BIGGER:
+            LOAD left
+            STORE r1
+            LOAD right
+            STORE r0
 
             #START:
-
             LOAD r1
             JZERO #END
             JODD #IS_ODD
@@ -693,25 +738,28 @@ class Machine:
         elif is_variable(index):
             left += 'I'
             array = self.mem['{}#0'.format(var)]
-            arr_addr = array['address']
+            arr_start_addr = array['start_addr']
             if left == 'LOADI':
+                self.code.append('LOAD {arr_start_addr}'.format(arr_start_addr=arr_start_addr))
                 code = """
-                GENERATE num
                 ADD x
                 STORE r9
                 LOADI r9
                 """
-                self.parse(code, num=arr_addr, x=index, r9=Reg.r9)
+                self.parse(code, x=index, r9=Reg.r9)
             elif left in ['STOREI', 'ADDI', 'SUBI']:
-                code = """
+                self.parse("""
                 STORE r8
-                GENERATE num
-                ADD x
+                """, r8=Reg.r8)
+
+                self.code.append('LOAD {arr_start_addr}'.format(arr_start_addr=arr_start_addr))
+
+                code = """ADD x
                 STORE r9
                 LOAD r8
                 {cmd} r9
-                """.format(cmd=left)
-                self.parse(code, num=arr_addr, x=index, r9=Reg.r9, r8=Reg.r8)
+                """.format(cmd=left, arr_size=arr_start_addr)
+                self.parse(code, x=index, r9=Reg.r9, r8=Reg.r8)
             else:
                 raise CompilerError("Unexpected command")
 

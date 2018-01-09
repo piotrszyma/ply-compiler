@@ -64,6 +64,7 @@ class TestComparisons(CompilerTestCase):
             ''
         )
 
+    @pytest.mark.skip
     def test_comparisons(self):
         program = """
         VAR
