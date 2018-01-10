@@ -358,6 +358,7 @@ class Machine:
             LOAD r1
             SHR
             STORE r1
+            
             LOAD r0
             SHL
             STORE r0
@@ -429,28 +430,29 @@ class Machine:
                LOAD r1
                SHL
                STORE r1
-               LOAD r0
-               INC
-               SUB r1
-               JZERO #ADJUST
-               JUMP #SHIFT
-
-               #ADJUST:
-               LOAD r1
-               SHR
-               STORE r1
-
+               SHL
+               DEC
+               SUB r0
+               JZERO #SHIFT
+        
                #LOOP:
-               LOAD r3
-               SUB r1
-               JZERO #DIVISION
-               JUMP #END
-
-               #DIVISION:
+               LOAD r1
+               INC
+               SUB r3
+               JZERO #END
+               
                LOAD r1
                SUB r0
                JZERO #ADD
-               JUMP #NO_ADD
+
+               #NO_ADD:
+               LOAD r2
+               SHL
+               STORE r2
+               LOAD r1
+               SHR
+               STORE r1
+               JUMP #LOOP
 
                #ADD:
                LOAD r2
@@ -460,15 +462,6 @@ class Machine:
                LOAD r0
                SUB r1
                STORE r0
-               LOAD r1
-               SHR
-               STORE r1
-               JUMP #LOOP
-
-               #NO_ADD:
-               LOAD r2
-               SHL
-               STORE r2
                LOAD r1
                SHR
                STORE r1

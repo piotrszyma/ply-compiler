@@ -1,5 +1,4 @@
 import ply.yacc as yacc
-from ply.lex import LexError
 
 from lib.error import CompilerError
 from lib.lexer import Lexer
