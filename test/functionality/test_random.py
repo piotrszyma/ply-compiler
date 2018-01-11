@@ -6,7 +6,7 @@ from test.compiler_test_case import CompilerTestCase
 
 
 class TestRandomOperations(CompilerTestCase):
-    @pytest.mark.skip
+    # @pytest.mark.skip
     def test_randomly_operations(self):
         operators = ['/', '+', '*', '%', '-']
 
@@ -47,18 +47,21 @@ class TestRandomOperations(CompilerTestCase):
                 f := 1;
                 g := 2;
                 {body}
-                WRITE sum;
             END
             """
 
             body.append(formated)
+            try:
 
-            self.assertOutputEquals(
-                code.format(body=formated),
-                '1'
-            )
+                self.assertOutputEquals(
+                    code.format(body=formated),
+                    '1'
+                )
+            except AssertionError as e:
+                print(code.format(body=formated))
+                raise AssertionError(e)
 
-    @pytest.mark.skip
+    # @pytest.mark.skip
     def test_for_loop(self):
         body = """
         VAR
