@@ -63,4 +63,37 @@ class TestCrucial(CompilerTestCase):
         )
 
     def test_6_mod_mult(self):
-        pass
+        self.assertOutputEquals(
+            self.getCodeFromFile('6-mod-mult.imp'),
+            '? > 674106858',
+            stdin='1234567890 1234567890987654321 987654321\n'
+        )
+
+    def test_7_loopiii(self):
+        self.assertOutputEquals(
+            self.getCodeFromFile('7-loopiii.imp'),
+            '? > 31000\n40900\n2222010',
+            stdin='0\n0\n0\n'
+        )
+
+        self.assertOutputEquals(
+            self.getCodeFromFile('7-loopiii.imp'),
+            '? > 31001\n40900\n2222012',
+            stdin='1\n0\n2\n'
+        )
+
+    def test_8_for(self):
+        self.assertOutputEquals(
+            self.getCodeFromFile('8-for.imp'),
+            '? > 507\n4379\n0',
+            stdin='12\n23\n34\n'
+        )
+
+    def test_9_sort(self):
+        code = self.getCodeFromFile('9-sort.imp')
+        output = self.compileAndRun(code)
+        self.assertEqual(
+            output,
+            '5\n2\n10\n4\n20\n8\n17\n16\n11\n9\n22\n18\n21\n13\n19\n3\n15\n6\n7\n12\n14\n1\n1234567890\n1\n2\n3\n4\n5'
+            '\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22'
+        )

@@ -44,8 +44,8 @@ class Machine:
                 symbol, size = symbol.split('#')
                 size = int(size)
                 self.mem[symbol + '#0'] = {
-                    'address':    mem_addr + 1,  # at the beginning store value of start address
-                    'size':       size,
+                    'address':   mem_addr + 1,  # at the beginning store value of start address
+                    'size':      size,
                     'start_ptr': mem_addr
                 }
                 mem_addr += size + 1
@@ -100,6 +100,19 @@ class Machine:
 
         return "\n".join(code)
 
+    def addr_to_reg(self, source, register):
+        *_, index, _ = source
+        if is_array(source) and is_reg(register) and is_int(index):
+            _, symbol, _, lineno = source
+            self.code.append('LOAD {}'.format(self.mem[symbol + '#0']['start_ptr']))
+            self.parse("""
+            ADD index
+            STORE reg
+            """, index=index, reg=register)
+            return 'int[]', symbol, register, lineno
+        else:
+            raise CompilerError("Unexpected element to save to reg")
+
     def assign(self, target, expression):
         _, *value = expression
         if is_operation(value):
@@ -113,25 +126,11 @@ class Machine:
                 raise CompilerError("Unknown value type")
 
     def assign_variable(self, target, source):
-        if is_array(source):
-            _, symbol, index, lineno = source
-            if is_int(index):
-                self.code.append('LOAD {}'.format(self.mem[symbol + '#0']['start_ptr']))
-                self.parse("""
-                ADD index
-                STORE r10
-                """, index=index, r10=Reg.r10)
-                source = ('int[]', symbol, Reg.r10, lineno)
+        if is_array(source) and is_int(source[2]):
+            source = self.addr_to_reg(source, Reg.r10)
 
-        if is_array(target):
-            _, symbol, index, lineno = target
-            if is_int(index):
-                self.code.append('LOAD {}'.format(self.mem[symbol + '#0']['start_ptr']))
-                self.parse("""
-                ADD index
-                STORE r11
-                """, index=index, r11=Reg.r11)
-                target = ('int[]', symbol, Reg.r11, lineno)
+        if is_array(target) and is_int(target[2]):
+            target = self.addr_to_reg(target, Reg.r11)
 
         code = """
         LOAD a
@@ -160,6 +159,7 @@ class Machine:
         sign, *operands = equation
 
         [left, right] = operands
+
         if is_array(left):
             _, symbol, index, lineno = left
             if is_int(index):
@@ -336,33 +336,30 @@ class Machine:
             JUMP #START
 
             #RIGHT_BIGGER:
-            LOAD left
-            STORE r1
             LOAD right
             STORE r0
+            LOAD left
+            STORE r1
 
             #START:
-            LOAD r1
             JZERO #END
             JODD #IS_ODD
             JUMP #NOT_ODD
 
             #IS_ODD:
-
             LOAD r2
             ADD r0
             STORE r2
 
             #NOT_ODD:
-
+            LOAD r0
+            SHL
+            STORE r0
+            
             LOAD r1
             SHR
             STORE r1
             
-            LOAD r0
-            SHL
-            STORE r0
-
             JUMP #START
 
             #END:
@@ -402,7 +399,8 @@ class Machine:
         # 0 -> r2
         code = """
                ZERO
-               STORE r2"""
+               STORE r2
+               """
         # x -> r0
         code += """
                GENERATE l_val
@@ -411,7 +409,7 @@ class Machine:
                """
         code += """
                STORE r0
-               JZERO #END_ZERO
+               JZERO #END
                """
         # y -> r1, r3
         code += """
@@ -420,27 +418,34 @@ class Machine:
                LOAD right
                """
         code += """
-               JZERO #END_ZERO
+               JZERO #END
                STORE r1
-               STORE r3
                """
-
         code += """
+               STORE r3
+               """ if is_number(right) else ""
+        code += """
+               JUMP #FIRST_SHIFT
                #SHIFT:
                LOAD r1
+               #FIRST_SHIFT:
                SHL
                STORE r1
                SHL
                DEC
                SUB r0
                JZERO #SHIFT
-        
-               #LOOP:
                LOAD r1
+               """
+
+        code += """
+               #LOOP:
                INC
-               SUB r3
+               SUB {const_addr}
                JZERO #END
-               
+               """.format(const_addr='r3' if is_number(right) else 'right')
+
+        code += """
                LOAD r1
                SUB r0
                JZERO #ADD
@@ -467,15 +472,9 @@ class Machine:
                STORE r1
                JUMP #LOOP
 
-               #END_ZERO:
-               LOAD r2
-               STORE target
-               JUMP #WAS_ZERO
-               
                #END:
                LOAD {target_reg}
                STORE target
-               #WAS_ZERO:
                """.format(target_reg='r2' if division else 'r0')
 
         self.parse(code,
