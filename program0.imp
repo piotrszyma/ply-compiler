@@ -1,22 +1,28 @@
-( Silnia + Fibonacci
-? 20
-> 2432902008176640000
-> 17711
-)
+( Rozklad liczby na czynniki pierwsze )
 VAR
-    f[101] s[101] i[101] n k l
+    n m reszta potega dzielnik
 BEGIN
     READ n;
-    f[0]:=1;
-    s[0]:=1;
-    i[0]:=0;
-    FOR j FROM 1 TO n DO
-		k:=j-1;
-        l:=k-1;
-		i[j]:=i[k]+1;
-		f[j]:=f[k]+f[l];
-        s[j]:=s[k]*i[j];
-    ENDFOR
-    WRITE s[n];
-    WRITE f[n];
+    dzielnik := 2;
+    m := dzielnik * dzielnik;
+    WHILE n >= m DO
+        potega := 0;
+        reszta := n % dzielnik;
+        WHILE reszta = 0 DO
+            n := n / dzielnik;
+            potega := potega + 1;
+            reszta := n % dzielnik;
+        ENDWHILE
+        IF potega > 0 THEN ( czy znaleziono dzielnik )
+            WRITE dzielnik;
+            WRITE potega;
+        ELSE
+            dzielnik := dzielnik + 1;
+            m := dzielnik * dzielnik;
+        ENDIF
+    ENDWHILE
+    IF n <> 1 THEN ( ostatni dzielnik )
+        WRITE n;
+        WRITE 1;
+    ENDIF
 END

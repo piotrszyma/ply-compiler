@@ -85,3 +85,13 @@ def symtab_sort(symtab):
     arr_addr = sorted(list(filter(lambda x: '#' in x[1:], symtab)), key=arr_sort)
     iter_addr = list(filter(lambda x: x[0] == '#', symtab))
     return var_addr + arr_addr + iter_addr
+
+def target_same_as_operator(target, left, right):
+    if target == left == right:
+        return 1
+    elif target == left:
+        return 0
+    elif target == right:
+        return 2
+    else:
+        return -1

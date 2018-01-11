@@ -15,9 +15,9 @@ class Reg:
     r7 = ('reg', 7, 7)
     r8 = ('reg', 8, 8)
     r9 = ('reg', 9, 9)
-    r10 = ('reg', 10, 10)
-    r11 = ('reg', 11, 11)
-    r12 = ('reg', 12, 12)
+    r10 = ('reg', 10, 10)  # used for storing array index
+    r11 = ('reg', 11, 11)  #
+    r12 = ('reg', 12, 12)  #
 
 
 class Machine:
@@ -309,6 +309,10 @@ class Machine:
 
         code = ""
 
+        if is_number(left) and is_number(right):
+            if right > left:
+                left, right = right, left
+
         if is_number(left):
             code += """
                    GENERATE l_val
@@ -324,6 +328,8 @@ class Machine:
         code += """
             ZERO
             STORE r2
+            """
+        code += """ 
             LOAD left
             SUB right
             JZERO #RIGHT_BIGGER
@@ -334,8 +340,10 @@ class Machine:
             LOAD right
             STORE r1
             JUMP #START
+    
+            #RIGHT_BIGGER:""" if left != right and not (is_number(left) and is_number(right)) else ''
 
-            #RIGHT_BIGGER:
+        code += """
             LOAD right
             STORE r0
             LOAD left
@@ -378,10 +386,203 @@ class Machine:
                    target=target)
 
     def operation_divide(self, target, operands):
-        self.operation_divmod(target, operands)
+        [left, right] = operands
+
+        if is_number(left) and is_number(right):
+            self.parse('GENERATE n', n=0 if right == 0 else left // right)
+            self.parse('STORE t', t=target)
+            return
+
+        # 0 -> r2
+        code = """
+               ZERO
+               STORE r2
+               """
+        # x -> r0
+        code += """
+               GENERATE l_val
+               """ if is_number(left) else """
+               LOAD left
+               """
+        code += """
+               STORE r0
+               JZERO #END
+               """
+        # y -> r1, r3
+        code += """
+               GENERATE r_val
+               """ if is_number(right) else """
+               LOAD right
+               """
+        code += """
+               JZERO #END
+               STORE r1
+               """
+        code += """
+               STORE r3
+               """ if is_number(right) else ""
+        code += """
+               JUMP #FIRST_SHIFT
+               #SHIFT:
+               LOAD r1
+               #FIRST_SHIFT:
+               SHL
+               STORE r1
+               SHL
+               DEC
+               SUB r0
+               JZERO #SHIFT
+               LOAD r1
+               """
+
+        code += """
+               #LOOP:
+               INC
+               SUB {const_addr}
+               JZERO #END
+               """.format(const_addr='r3' if is_number(right) else 'right')
+
+        code += """
+               LOAD r1
+               SUB r0
+               JZERO #ADD
+
+               #NO_ADD:
+               LOAD r2
+               SHL
+               STORE r2
+               LOAD r1
+               SHR
+               STORE r1
+               JUMP #LOOP
+
+               #ADD:
+               LOAD r2
+               SHL
+               INC
+               STORE r2
+               LOAD r0
+               SUB r1
+               STORE r0
+               LOAD r1
+               SHR
+               STORE r1
+               JUMP #LOOP
+
+               #END:
+               LOAD {target_reg}
+               STORE target
+               """.format(target_reg='r2')
+
+        self.parse(code,
+                   l_val=left,
+                   r_val=right,
+                   left=left if is_variable(left) else Reg.r4,
+                   right=right if is_variable(right) else Reg.r5,
+                   target=target,
+                   r0=Reg.r0, r1=Reg.r1, r2=Reg.r2, r3=Reg.r3)
 
     def operation_modulo(self, target, operands):
-        self.operation_divmod(target, operands, division=False)
+        [left, right] = operands
+
+        if is_number(left) and is_number(right):
+            self.parse('GENERATE n', n=0 if right == 0 else left % right)
+            self.parse('STORE t', t=target)
+            return
+
+        code = ''
+
+        # 0 -> r2
+        code += """
+                       ZERO
+                       STORE r2
+                       """
+        # x -> r0
+        code += """
+                       GENERATE l_val
+                       """ if is_number(left) else """
+                       LOAD left
+                       """
+        code += """
+                       STORE r0
+                       JZERO #END
+                       """
+        # y -> r1, r3
+        code += """
+                       GENERATE r_val
+                       """ if is_number(right) else """
+                       """
+        code += """
+                       LOAD right
+                """ if not is_number(right) and right != left else ''
+
+        code += """
+                       JZERO #END
+                       STORE r1
+                       """
+        code += """
+                       STORE r3
+                       """ if is_number(right) else ""
+        code += """
+                       JUMP #FIRST_SHIFT
+                       #SHIFT:
+                       LOAD r1
+                       #FIRST_SHIFT:
+                       SHL
+                       STORE r1
+                       SHL
+                       DEC
+                       SUB r0
+                       JZERO #SHIFT
+                       LOAD r1
+                       """
+
+        code += """
+                       #LOOP:
+                       INC
+                       SUB {const_addr}
+                       JZERO #END
+                       """.format(const_addr='r3' if is_number(right) else 'right')
+
+        code += """
+                       LOAD r1
+                       SUB r0
+                       JZERO #ADD
+
+                       #NO_ADD:
+                       LOAD r2
+                       SHL
+                       STORE r2
+                       LOAD r1
+                       SHR
+                       STORE r1
+                       JUMP #LOOP
+
+                       #ADD:
+                       LOAD r2
+                       SHL
+                       INC
+                       STORE r2
+                       LOAD r0
+                       SUB r1
+                       STORE r0
+                       LOAD r1
+                       SHR
+                       STORE r1
+                       JUMP #LOOP
+
+                       #END:
+                       LOAD {target_reg}
+                       STORE target
+                       """.format(target_reg='r0')
+
+        self.parse(code,
+                   l_val=left,
+                   r_val=right,
+                   left=left if is_variable(left) else Reg.r4,
+                   right=right if is_variable(right) else Reg.r5,
+                   target=target,
+                   r0=Reg.r0, r1=Reg.r1, r2=Reg.r2, r3=Reg.r3)
 
     def operation_divmod(self, target, operands, division=True):
         [left, right] = operands
