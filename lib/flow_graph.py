@@ -113,12 +113,11 @@ class FlowGraph:
 
         self.flow += ('assign', iterator, ('expression', start)),
         self.flow += ('assign', limit, ('expression', end)),
-
         self.flow += self.add_goto_if((iterator, '<', limit), label_end)
+
         self.flow += self.add_label(label_start)
 
         self.generate(body)
-
         self.flow += self.add_goto_if((iterator, '<=', limit), label_end)
         self.flow += ('assign', iterator, ('expression', '-', iterator, 1)),
         self.flow += self.add_goto(label_start)

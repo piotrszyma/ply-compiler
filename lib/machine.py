@@ -100,10 +100,9 @@ class Machine:
 
         return "\n".join(code)
 
-    def addr_to_reg(self, source, register):
-        *_, index, _ = source
-        if is_array(source) and is_reg(register) and is_int(index):
-            _, symbol, _, lineno = source
+    def addr_to_reg_if_arr(self, source, register):
+        if is_array(source) and is_int(source[2]):
+            _, symbol, index, lineno = source
             self.code.append('LOAD {}'.format(self.mem[symbol + '#0']['start_ptr']))
             self.parse("""
             ADD index
@@ -111,7 +110,7 @@ class Machine:
             """, index=index, reg=register)
             return 'int[]', symbol, register, lineno
         else:
-            raise CompilerError("Unexpected element to save to reg")
+            return source
 
     def assign(self, target, expression):
         _, *value = expression
@@ -126,11 +125,8 @@ class Machine:
                 raise CompilerError("Unknown value type")
 
     def assign_variable(self, target, source):
-        if is_array(source) and is_int(source[2]):
-            source = self.addr_to_reg(source, Reg.r10)
-
-        if is_array(target) and is_int(target[2]):
-            target = self.addr_to_reg(target, Reg.r11)
+        source = self.addr_to_reg_if_arr(source, Reg.r10)
+        target = self.addr_to_reg_if_arr(target, Reg.r11)
 
         code = """
         LOAD a
@@ -139,15 +135,7 @@ class Machine:
         self.parse(code, a=source, b=target)
 
     def assign_number(self, target, source):
-        if is_array(target):
-            _, symbol, index, _ = target
-            if is_variable(index):
-                self.code.append('LOAD {}'.format(self.mem[symbol + '#0']['start_ptr']))
-                self.parse('ADD i', i=index)
-                self.parse('STORE r1', r1=Reg.r1)
-                self.parse('GENERATE n', n=source)
-                self.parse('STOREI r1', r1=Reg.r1)
-                return
+        target = self.addr_to_reg_if_arr(target, Reg.r1)
 
         code = """
         GENERATE n
@@ -160,35 +148,11 @@ class Machine:
 
         [left, right] = operands
 
-        if is_array(left):
-            _, symbol, index, lineno = left
-            if is_int(index):
-                self.code.append('LOAD {}'.format(self.mem[symbol + '#0']['start_ptr']))
-                self.parse("""
-                ADD index
-                STORE r10
-                """, index=index, r10=Reg.r10)
-                operands = [('int[]', symbol, Reg.r10, lineno), right]
+        left = self.addr_to_reg_if_arr(left, Reg.r10)
+        right = self.addr_to_reg_if_arr(right, Reg.r11)
+        target = self.addr_to_reg_if_arr(target, Reg.r12)
 
-        if is_array(right):
-            _, symbol, index, lineno = right
-            if is_int(index):
-                self.code.append('LOAD {}'.format(self.mem[symbol + '#0']['start_ptr']))
-                self.parse("""
-                ADD index
-                STORE r11
-                """, index=index, r11=Reg.r11)
-                operands = [left, ('int[]', symbol, Reg.r11, lineno)]
-
-        if is_array(target):
-            _, symbol, index, lineno = target
-            if is_int(index):
-                self.code.append('LOAD {}'.format(self.mem[symbol + '#0']['start_ptr']))
-                self.parse("""
-                ADD index
-                STORE r12
-                """, index=index, r12=Reg.r12)
-                target = ('int[]', symbol, Reg.r12, lineno)
+        operands = [left, right]
 
         operations = {
             '+': self.operation_add,
@@ -214,24 +178,23 @@ class Machine:
             else:
                 x, y = y, x
 
-        if is_int(x) or is_array(x):
-            # t := a + 1
-            if is_number(y):
-                if y == 0:
-                    self.parse('LOAD x', x=x)
-                elif y == 1:
-                    self.parse('LOAD x', x=x)
-                    self.parse('INC')
-                else:
-                    self.parse('GENERATE n', n=y)
-                    self.parse('ADD x', x=x)
-            # t := a + b
-            # t := a + b[x]
-            elif is_variable(y):
+        # t := a + 1
+        if is_number(y):
+            if y == 0:
                 self.parse('LOAD x', x=x)
-                self.parse('ADD y', y=y)
+            elif y == 1:
+                self.parse('LOAD x', x=x)
+                self.parse('INC')
             else:
-                raise CompilerError("Unexpected symbol")
+                self.parse('GENERATE n', n=y)
+                self.parse('ADD x', x=x)
+        # t := a + b
+        # t := a + b[x]
+        elif is_variable(y):
+            self.parse('LOAD x', x=x)
+            self.parse('ADD y', y=y)
+        else:
+            raise CompilerError("Unexpected symbol")
 
         self.parse('STORE a', a=target)
 
@@ -510,8 +473,7 @@ class Machine:
         # y -> r1, r3
         code += """
                        GENERATE r_val
-                       """ if is_number(right) else """
-                       """
+                       """ if is_number(right) else ''
         code += """
                        LOAD right
                 """ if not is_number(right) and right != left else ''
@@ -693,15 +655,7 @@ class Machine:
             self.write_number(value)
 
     def write_variable(self, source):
-        if is_array(source):
-            _, symbol, index, lineno = source
-            if is_int(index):
-                self.code.append('LOAD {}'.format(self.mem[symbol + '#0']['start_ptr']))
-                self.parse("""
-                ADD index
-                STORE r10
-                """, index=index, r10=Reg.r10)
-                source = ('int[]', symbol, Reg.r10, lineno)
+        source = self.addr_to_reg_if_arr(source, Reg.r10)
 
         code = """
         LOAD a
@@ -719,15 +673,8 @@ class Machine:
             raise CompilerError("Cannot READ non-variable")
 
     def read_variable(self, target):
-        if is_array(target):
-            _, symbol, index, lineno = target
-            if is_int(index):
-                self.code.append('LOAD {}'.format(self.mem[symbol + '#0']['start_ptr']))
-                self.parse("""
-                       ADD index
-                       STORE r10
-                       """, index=index, r10=Reg.r10)
-                target = ('int[]', symbol, Reg.r10, lineno)
+        target = self.addr_to_reg_if_arr(target, Reg.r10)
+
         code = """
         GET
         STORE a
