@@ -1,0 +1,33 @@
+ZERO
+INC
+STORE 14
+ZERO
+INC
+SHL
+SHL
+INC
+STORE 13
+('label', 'label0')
+LOAD 14
+INC
+SUB 13
+('JZERO', 'label3')
+('JUMP', 'label1')
+('label', 'label3')
+LOAD 14
+INC
+STORE 14
+SUB 13
+('JZERO', 'label4')
+('JUMP', 'label2')
+('label', 'label4')
+LOAD 13
+SUB 14
+('JZERO', 'label5')
+('JUMP', 'label2')
+('label', 'label5')
+LOAD 14
+PUT
+('label', 'label2')
+('JUMP', 'label0')
+('label', 'label1')

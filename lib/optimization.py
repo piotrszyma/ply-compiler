@@ -1,3 +1,5 @@
+import time
+
 from lib.error import CompilerError
 
 
@@ -14,7 +16,25 @@ class Optimization:
         self.cmds = cmds
         self.opt_remove_store_load()
         self.opt_halt_if_no_write()
-        self.opt_jump_to_load_after_store()
+
+        pre = 1
+        post = 0
+        while pre != post:
+            pre = len(self.cmds)
+            self.opt_load_store_load_store_redundancy()
+            post = len(self.cmds)
+
+        pre = 1
+        post = 0
+
+        while pre != post:
+            pre = len(self.cmds)
+            self.opt_zero_store_zero_store_redundancy()
+            post = len(self.cmds)
+
+        with open('cmds', 'w') as f:
+            f.write('\n'.join([str(c) for c in self.cmds]))
+
         return self.cmds
 
     def opt_remove_store_load(self):
@@ -37,9 +57,9 @@ class Optimization:
                 l_cmd, l_addr = (cmds[l_i].split(' ') + [''])[:2]
 
                 if u_cmd == 'STORE' and l_cmd == 'LOAD' and u_addr == l_addr:
-                    cmds[l_i] = 'DELETE'
+                    cmds[l_i] = 'REMOVE'
 
-        self.cmds = list(filter(lambda x: x != 'DELETE', cmds))
+        self.cmds = list(filter(lambda x: x != 'REMOVE', cmds))
 
     def opt_halt_if_no_write(self):
         reads = self.cmds.count('GET')
@@ -66,20 +86,55 @@ class Optimization:
                     else:
                         jumps[c[1]] = {*jumps[c[1]], self.get_jump_predecessor(lineno)}
         jumps = dict(map(lambda j: (j[0], *j[1]), filter(lambda j: len(j[1]) == 1, jumps.items())))
-        # for label, cmd in labels.items():
-        #     if cmd is None:
-        #         continue
-        #     if isinstance(cmd, tuple):
-        #         continue
-        #     label_cmd, l_addr, *_ = cmd.split(' ') + [' ']
-        #     pre_jump = jumps.get(label, None)
-        #     if pre_jump is None:
-        #         continue
-        #     pre_jump_cmd, p_addr, *_ = pre_jump.split(' ') + [' ']
-        #     if l_addr == p_addr and label_cmd == 'LOAD' and pre_jump_cmd == 'STORE':
-        #         i = indexes[label]
-        #         self.cmds[i], self.cmds[i - 1] = self.cmds[i - 1], self.cmds[i]
 
+        for label, cmd in [(k, v) for k, v in labels.items() if
+                           (v is not None and isinstance(v, str) and v.split(' ')[0] == 'LOAD')]:
+
+            if label not in jumps.keys() or not isinstance(jumps[label], str):
+                continue
+
+            if jumps[label].split(' ')[0] == 'STORE':
+                _, load_addr = cmd.split(' ')
+                _, store_addr = jumps[label].split(' ')
+                if load_addr == store_addr:
+                    adr = indexes[label]
+                    cmds[adr], cmds[adr + 1] = cmds[adr + 1], cmds[adr]
+        self.cmds = cmds
+
+    def opt_load_store_load_store_redundancy(self):
+        cmds = self.cmds
+
+        index = 0
+        max = len(self.cmds)
+        while index < max - 3:
+            if cmds[index] == cmds[index + 2] and cmds[index][:4] == 'LOAD' and cmds[index + 1][:5] == 'STORE':
+                cmds[index + 2] = 'REMOVE'
+                index += 3
+            else:
+                index += 1
+        cmds = list(filter(lambda x: x != 'REMOVE', cmds))
+
+        self.cmds = cmds
+
+    def opt_zero_store_zero_store_redundancy(self):
+        cmds = self.cmds
+
+        index = 0
+        max = len(self.cmds)
+
+        while index < max - 3:
+            if cmds[index] == 'ZERO' and \
+                            cmds[index + 2] == 'ZERO' and \
+                                    cmds[index + 1][:5] == cmds[index + 3][:5] == 'STORE':
+                cmds[index + 2] = 'REMOVE'
+                index += 4
+            else:
+                index += 1
+        cmds = list(filter(lambda x: x != 'REMOVE', cmds))
+
+        self.cmds = cmds
+
+    # aux methods
     def get_label_successor(self, label_index):
         if label_index == len(self.cmds) - 1:
             return None
@@ -88,8 +143,8 @@ class Optimization:
 
     def get_jump_predecessor(self, jump_index):
         if jump_index == 0:
-            return self.cmds[jump_index]
+            return 'start'
         elif isinstance(self.cmds[jump_index - 1], tuple):
-            return self.get_jump_predecessor(jump_index - 1)
+            return 'jump'
         else:
             return self.cmds[jump_index - 1]
