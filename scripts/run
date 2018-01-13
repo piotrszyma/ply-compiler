@@ -1,0 +1,2 @@
+./plyc.py program0.imp --output ./scripts/a.out  && ./scripts/interpreter a.out
+

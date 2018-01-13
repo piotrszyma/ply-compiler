@@ -1,33 +1,32 @@
 ZERO
 INC
-STORE 14
+STORE 13
 ZERO
 INC
 SHL
 SHL
 INC
-STORE 13
+STORE 14
 ('label', 'label0')
-LOAD 14
+LOAD 13
 INC
-SUB 13
+SUB 14
 ('JZERO', 'label3')
 ('JUMP', 'label1')
 ('label', 'label3')
-LOAD 14
-INC
-STORE 14
-SUB 13
-('JZERO', 'label4')
-('JUMP', 'label2')
-('label', 'label4')
 LOAD 13
+INC
+STORE 13
 SUB 14
-('JZERO', 'label5')
-('JUMP', 'label2')
-('label', 'label5')
+('JZERO', 'label4')
+('JUMP', 'label0')
+('label', 'label4')
 LOAD 14
+SUB 13
+('JZERO', 'label5')
+('JUMP', 'label0')
+('label', 'label5')
+LOAD 13
 PUT
-('label', 'label2')
 ('JUMP', 'label0')
 ('label', 'label1')

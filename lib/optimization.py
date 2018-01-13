@@ -32,8 +32,7 @@ class Optimization:
             self.opt_zero_store_zero_store_redundancy()
             post = len(self.cmds)
 
-        with open('cmds', 'w') as f:
-            f.write('\n'.join([str(c) for c in self.cmds]))
+        self.opt_jump_after_label()
 
         return self.cmds
 
@@ -133,6 +132,32 @@ class Optimization:
         cmds = list(filter(lambda x: x != 'REMOVE', cmds))
 
         self.cmds = cmds
+
+    def opt_jump_after_label(self):
+        """
+        ('label', 'label1')
+            ...
+        ('label', 'label2')
+        ('JUMP', 'label1')
+        """
+        cmds = self.cmds
+
+        index = 0
+        max = len(self.cmds)
+
+        while index < max - 1:
+            if isinstance(cmds[index], tuple) and isinstance(cmds[index + 1], tuple):
+                if cmds[index][0] == 'label' and cmds[index + 1][0] == 'JUMP':
+                    to_replace = cmds[index][1]
+                    replaced_by = cmds[index + 1][1]
+                    cmds[index] = 'REMOVE'
+                    for index, cmd in enumerate(self.cmds):
+                        if isinstance(cmd, tuple) and cmd[1] == to_replace:
+                            cmds[index] = (cmd[0], replaced_by)
+                    cmds = list(filter(lambda x: x != 'REMOVE', cmds))
+                    self.cmds = cmds
+            index += 1
+
 
     # aux methods
     def get_label_successor(self, label_index):

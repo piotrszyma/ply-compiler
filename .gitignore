@@ -1,6 +1,7 @@
 .idea
 examples/
 */**/__pycache__/
+*/**/*.pyc
 */**/*.out
 */**/.*
 .*

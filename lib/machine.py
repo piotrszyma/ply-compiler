@@ -479,7 +479,7 @@ class Machine:
                 """ if not is_number(right) and right != left else ''
 
         code += """
-                       JZERO #END
+                       JZERO #END_RIGHT
                        STORE r1
                        """
         code += """
@@ -532,10 +532,16 @@ class Machine:
                        SHR
                        STORE r1
                        JUMP #LOOP
-
+                       
+                       #END_RIGHT:
+                       ZERO
+                       STORE target
+                       JUMP #FINISH
+                       
                        #END:
                        LOAD {target_reg}
                        STORE target
+                       #FINISH:
                        """.format(target_reg='r0')
 
         self.parse(code,

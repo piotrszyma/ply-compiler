@@ -64,7 +64,7 @@ class TestOperations(CompilerTestCase):
     def test_division_should_work(self):
         self.assertOutputEquals(
             self.compileAndRun(DIV_ONE),
-            "2\n1\n3\n2\n0\n2\n2\n1\n2\n1\n1\n2\n1\n3\n1\n0\n1\n3\n1\n0\n1\n1\n1\n1\n0\n3"
+            "2\n1\n3\n2\n0\n2\n2\n1\n2\n1\n1\n2\n1\n3\n1\n0\n1\n3\n1\n0\n1\n1\n1\n1\n0\n3\n0"
         )
 
     def test_operations_should_work(self):
@@ -85,7 +85,7 @@ class TestOperations(CompilerTestCase):
     def test_modulo_should_work(self):
         self.assertOutputEquals(
             TEST_MOD,
-            '0\n2\n0\n1\n2\n0\n6\n0\n1\n0\n0\n1\n0\n2\n0\n4\n0\n1\n0\n2\n3\n0\n3\n0\n2\n0'
+            '0\n2\n0\n1\n2\n0\n6\n0\n1\n0\n0\n1\n0\n2\n0\n4\n0\n1\n0\n2\n3\n0\n3\n0\n2\n0\n0'
         )
 
     def test_div(self):
@@ -445,6 +445,9 @@ BEGIN
 
     result := b % b;
     WRITE result; (0)
+    
+    result := 3 % 0;
+    WRITE result;
 END
 """
 
@@ -693,6 +696,9 @@ BEGIN
 
     result := b / a;
     WRITE result; (3)
+    
+    result := 3 / 0;
+    WRITE result; (0)
 
 END
 """

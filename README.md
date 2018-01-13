@@ -1,77 +1,24 @@
-# commands
+### PLY Compiler
 
-CMD
-CMD i
-('label', label_name)
-('goto', label_name)
+A compiler build for Formal Languages and Translation Techniques classes
 
+Winter Semester 2017/2018  
 
-#if statement
+http://ki.pwr.edu.pl/gebala/dyd/jftt2017.html
 
-IF STATEMENT THEN
-    CMD
-ENDIF
-
-('if', 'cond')
-('goto', label)
-
-('if', not('cond'))
-('goto', label)
+Requirements:
+```
+Python 3.6.3
+PLY 3.9
+```
+Installation: (for Debian)
 
 ```
-    ('if_then', ('condition', '<>', ('int', 'a', 5), 0), 
-        [
-            ('assign', ('int', 'a', 6), ('expression', 0))
-        ]
-    )
-    
-    ('if', not(('a', '<>', 0)))
-    ('goto', 'label1')
-    CMDs
-    ('label', 'label1')
-    
-    ...
-    [condition],
-    [ifcondgood],
-    ...
-    
-        
-    ('if_then', ('condition', '<>', ('int', 'a', 5), 0), 
-        [   
-            ('assign', ('int', 'a', 6), ('expression', 0)), 
-            ('assign', ('int', 'a', 7), ('expression', 1)), 
-            ('assign', ('int', 'a', 8), ('expression', 2))
-        ]
-    )
-    
-    ('if_else', ('condition', '<>', ('int', 'a', 5), 0), 
-        [
-            ('assign', ('int', 'a', 6), ('expression', 0))
-        ], [
-            ('assign', ('int', 'a', 8), ('expression', 4))
-        ]
-    )
-    
-    ('if', not(('a', '<>', 0)))
-    ('goto', 'label1')
-    CMDs
-    ('goto', 'label2')
-    ('label', 'label1')
-    CMDs
-    ('label', 'label2')
-    ...
-    [condition],
-    [ifcondgood],
-    [ifcondbad],
-    ...
-    
-    
-
+sudo apt-get install python3-pip
+sudo pip3 install ply
 ```
-#if else statement
-
-IF STATEMENT THEN
-    CMD
-ELSE
-    CMD
-ENDIF
+Usage:
+```
+python3 plyc.py [input] [--output OUTPUT]
+```
+To compile a program, provide path as `input` argument. By default, it compiles to file `a.out` in cwd, you can specify your own filename using `--output` flag

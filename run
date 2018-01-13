@@ -1,1 +1,0 @@
-./plyc.py program0.imp && ./interpreter a.out

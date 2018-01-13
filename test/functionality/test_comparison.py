@@ -64,7 +64,7 @@ class TestComparisons(CompilerTestCase):
             ''
         )
 
-    @pytest.mark.skip
+    # @pytest.mark.skip
     def test_comparisons(self):
         program = """
         VAR
@@ -98,7 +98,7 @@ class TestComparisons(CompilerTestCase):
             expected
         )
 
-    @pytest.mark.skip
+    # @pytest.mark.skip
     def test_comparisons_arrays(self):
         program = """
         VAR
@@ -127,7 +127,7 @@ class TestComparisons(CompilerTestCase):
             expected
         )
 
-    @pytest.mark.skip
+    # @pytest.mark.skip
     def test_comparisons_arrays_variable_index(self):
         program = """
         VAR
@@ -163,7 +163,7 @@ class TestComparisons(CompilerTestCase):
             expected
         )
 
-    @pytest.mark.skip
+    # @pytest.mark.skip
     def test_comparisons_arrays_variable_index_if_else(self):
         program = """
         VAR
