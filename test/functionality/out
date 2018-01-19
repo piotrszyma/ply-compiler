@@ -3,9 +3,9 @@
             a[10] b c d e
         BEGIN
             
-            a[0] := 93;
+            a[0] := 58;
             b := 1;
-            a[b] := 48;
+            a[b] := 22;
             FOR i FROM a[0] TO a[b] DO
                 WRITE i;
             ENDFOR

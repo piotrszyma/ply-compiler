@@ -1,5 +1,3 @@
-import time
-
 from lib.error import CompilerError
 
 
@@ -157,7 +155,6 @@ class Optimization:
                     cmds = list(filter(lambda x: x != 'REMOVE', cmds))
                     self.cmds = cmds
             index += 1
-
 
     # aux methods
     def get_label_successor(self, label_index):

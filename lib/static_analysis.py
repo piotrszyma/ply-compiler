@@ -1,7 +1,5 @@
-import logging
-
 from lib.error import CompilerError
-from lib.utils import is_variable, raise_error, is_int, is_array, is_operation, is_expression, is_number
+from lib.utils import is_variable, raise_error, is_int, is_array, is_number
 
 
 class StaticAnalyzer:

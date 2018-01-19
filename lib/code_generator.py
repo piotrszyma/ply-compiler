@@ -20,8 +20,6 @@ class CodeGenerator:
         for cmd in flow_graph:
             getattr(self, 'gen_' + cmd[0])(cmd)
 
-        # self.machine.opt_cache_const_generation()
-
         opt = Optimization()
 
         self.machine.code = opt.optimize(self.machine.code)
