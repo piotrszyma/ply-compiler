@@ -1,6 +1,6 @@
 ### PLY Compiler
 
-A compiler build for Formal Languages and Translation Techniques classes
+A compiler built for Formal Languages and Translation Techniques classes
 
 Winter Semester 2017/2018  
 
